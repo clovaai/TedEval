@@ -75,7 +75,7 @@ We evaluated state-of-the-art scene text detectors with TedEval on two benchmark
 ```git clone https://github.com/clovaai/TedEval.git```
 
 ### Requirements
-* python 3.6
+* python 3
 * python 3.x Polygon, Bottle, Pillow
 ```python3
 # install
@@ -102,9 +102,22 @@ zip result.zip result/*
 ```python3
 python web.py
 ```
-- Place the zip file of input images of the dataset in the `gt` directory.
+- Place the zip file of images and GTs of the dataset named `images.zip` and `gt.zip`, respectively, in the `gt` directory.
 - Create an empty directory name `output`. This is where the DB, submission files, and result files will be created.
 - You can change the host and port number in the final line of `web.py`.
+
+The file structure should then be:
+```
+.
+├── gt
+│   ├── gt.zip
+│   └── images.zip
+├── output   # empty dir
+├── script.py
+├── web.py
+├── README.md
+└── ...
+```
 
 <img src='images/visualizer.png'>
 
