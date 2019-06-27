@@ -1,0 +1,1 @@
+This folder are designed to store CSS and JS files for a custom visualization.
