@@ -1,5 +1,5 @@
 # TedEval: A Fair Evaluation Metric for Scene Text Detectors
-Official Python 3 implementation of TedEval | [paper]() | [slides](https://docs.google.com/presentation/d/1EFK_WjpdLExZVDPt4C7yCcxjpXNvIyAOL9zUnKx1VoY/edit?usp=sharing)
+Official Python 3 implementation of TedEval | [paper](https://arxiv.org/abs/1907.01227) | [slides](https://docs.google.com/presentation/d/1EFK_WjpdLExZVDPt4C7yCcxjpXNvIyAOL9zUnKx1VoY/edit?usp=sharing)
 
 **[Chae Young Lee](mailto:acheketa@gmail.com), Youngmin Baek, and Hwalsuk Lee.**
 
@@ -126,7 +126,34 @@ The file structure should then be:
 @article{lee2019tedeval,
   title={TedEval: A Fair Evaluation Metric for Scene Text Detectors},
   author={Lee, Chae Young and Baek, Youngmin and Lee, Hwalsuk},
-  journal={arXiv preprint arXiv:},
+  journal={arXiv preprint arXiv:1907.01227},
   year={2019}
 }
+```
+
+## Contact us
+We welcome any feedbacks to our metric. Please contact the authors via `{acheketa, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
+
+## License
+
+```
+Copyright (c) 2019-present NAVER Corp.
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 ```
