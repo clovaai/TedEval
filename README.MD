@@ -132,7 +132,7 @@ The file structure should then be:
 ```
 
 ## Contact us
-We welcome any feedbacks to our metric. Please contact the authors via `{acheketa, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
+We welcome any feedbacks to our metric. Please contact the authors via `{cylee7133, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
 
 ## License
 
