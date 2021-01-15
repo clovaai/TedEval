@@ -484,7 +484,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             if evaluationParams['CONFIDENCES']:
                 for detNum in range(len(detPols)):
                     if detNum not in detDontCarePolsNum :
-                        match = detNum == list(filter(lambda p: p['det'] == 10, pairs))[0]['det']
+                        match = detNum in detMatchedNums
                         arrSampleConfidences.append(confidencesList[detNum])
                         arrSampleMatch.append(match)
                         arrGlobalConfidences.append(confidencesList[detNum]);
