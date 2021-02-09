@@ -1,7 +1,7 @@
 # TedEval: A Fair Evaluation Metric for Scene Text Detectors
 Official Python 3 implementation of TedEval | [paper](https://arxiv.org/abs/1907.01227) | [slides](https://docs.google.com/presentation/d/1EFK_WjpdLExZVDPt4C7yCcxjpXNvIyAOL9zUnKx1VoY/edit?usp=sharing)
 
-**[Chae Young Lee](mailto:acheketa@gmail.com), Youngmin Baek, and Hwalsuk Lee.**
+**[Chae Young Lee](mailto:cylee7133@gmail.com), Youngmin Baek, and Hwalsuk Lee.**
 
 Clova AI Research, NAVER Corp.
 
@@ -124,7 +124,7 @@ python script.py –g=gt/gt.zip –s=result/result.zip
 ```
 - Locate the path of GT and submission file using the flag `-g` and `-s`, respectively.
 - QUAD annotation type is used as default. To switch between `{QUAD, LTRB}`, add `-p='{"LTRB" = False}'` in the command or directly modify the `default_evaluation_params()` function in `script.py`.
-- If there are transcription or confidence values in your submission file, add `-p='{"CONFIDENCES" = True}' or `-p='{"TRANSCRIPTION" = True}'.
+- If there are transcription or confidence values in your submission file, add `-p='{"CONFIDENCES" = True}` or `-p='{"TRANSCRIPTION" = True}'`.
 
 
 ### Run Visualizer
@@ -161,7 +161,7 @@ The file structure should then be:
 ```
 
 ## Contact us
-We welcome any feedbacks to our metric. Please contact the authors via `{acheketa, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
+We welcome any feedbacks to our metric. Please contact the authors via `{cylee7133, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
 
 ## License
 
