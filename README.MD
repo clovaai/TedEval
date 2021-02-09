@@ -1,7 +1,7 @@
 # TedEval: A Fair Evaluation Metric for Scene Text Detectors
 Official Python 3 implementation of TedEval | [paper](https://arxiv.org/abs/1907.01227) | [slides](https://docs.google.com/presentation/d/1EFK_WjpdLExZVDPt4C7yCcxjpXNvIyAOL9zUnKx1VoY/edit?usp=sharing)
 
-**[Chae Young Lee](mailto:cylee7133@gmail.com), Youngmin Baek, and Hwalsuk Lee.**
+**[Chae Young Lee](mailto:acheketa@gmail.com), Youngmin Baek, and Hwalsuk Lee.**
 
 Clova AI Research, NAVER Corp.
 
@@ -82,23 +82,52 @@ We evaluated state-of-the-art scene text detectors with TedEval on two benchmark
 pip3 install Polygon3 bottle Pillow
 ```
 
-### Supported Datasets
-We support all LTRB and QUAD annotations. Extension to polygon annotation is in progress.
-* ICDAR 2013 Focused Scene Text
-* ICDAR 2015 Incidental Scene Text
+### Supported Annotation Type
+* LTRB(xmin, ymin, xmax, ymax)
+* QUAD(x1, y1, x2, y2, x3, y3, x4, y4)
 
-### Evaluation
-```python3
-python script.py –g=gt/gt.zip –s=result/result.zip
+
+## Evaluation
+
+### Prepare data
+
+The ground truth and the result data should be text files, one for each sample. Note that the naming rule of each text file is that there must be `img_{number}` in the filename and that the number indicate the image sample.
 ```
-- The flag `-g` is to locate GT and `-s` is to locate the submission file. Both flags are necessary to run the script.
-- To use TedEval on QUAD datasets, add `-p='{"LTRB" = False}'` in the command or directly modify the setting in `script.py`.
-- When preparing `result.zip`, text files must be compressed without the directory.
+# gt/gt_img_38.txt
+644,101,932,113,932,168,643,156,concierge@L3
+477,138,487,139,488,149,477,148,###
+344,131,398,130,398,149,344,149,###
+1195,148,1277,138,1277,177,1194,187,###
+23,270,128,267,128,282,23,284,###
+
+# result/res_img_38.txt
+644,101,932,113,932,168,643,156,{Transcription},{Confidence}
+477,138,487,139,488,149,477,148
+344,131,398,130,398,149,344,149
+1195,148,1277,138,1277,177,1194,187
+23,270,128,267,128,282,23,284
+```
+
+Compress these text files.
 ```python3
+zip gt.zip gt/*
 zip result.zip result/*
 ```
 
-## Stand-alone Visualizer
+Refer to `gt/result.zip` and `gt/gt_*.zip` for examples.
+
+
+### Run stand-alone evaluation
+
+```python3
+python script.py –g=gt/gt.zip –s=result/result.zip
+```
+- Locate the path of GT and submission file using the flag `-g` and `-s`, respectively.
+- To use TedEval on QUAD datasets, add `-p='{"LTRB" = False}'` in the command or directly modify the setting in `script.py`.
+- If there are transcription or confidence values in your submission file, add `-p='{"CONFIDENCES" = True}' or `-p='{"TRANSCRIPTION" = True}'.
+
+
+### Run Visualizer
 ```python3
 python web.py
 ```
@@ -132,7 +161,7 @@ The file structure should then be:
 ```
 
 ## Contact us
-We welcome any feedbacks to our metric. Please contact the authors via `{cylee7133, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
+We welcome any feedbacks to our metric. Please contact the authors via `{acheketa, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
 
 ## License
 
