@@ -123,7 +123,7 @@ Refer to `gt/result.zip` and `gt/gt_*.zip` for examples.
 python script.py –g=gt/gt.zip –s=result/result.zip
 ```
 - Locate the path of GT and submission file using the flag `-g` and `-s`, respectively.
-- To use TedEval on QUAD datasets, add `-p='{"LTRB" = False}'` in the command or directly modify the setting in `script.py`.
+- QUAD annotation type is used as default. To switch between `{QUAD, LTRB}`, add `-p='{"LTRB" = False}'` in the command or directly modify the `default_evaluation_params()` function in `script.py`.
 - If there are transcription or confidence values in your submission file, add `-p='{"CONFIDENCES" = True}' or `-p='{"TRANSCRIPTION" = True}'.
 
 
