@@ -1,7 +1,7 @@
 # TedEval: A Fair Evaluation Metric for Scene Text Detectors
 Official Python 3 implementation of TedEval | [paper](https://arxiv.org/abs/1907.01227) | [slides](https://docs.google.com/presentation/d/1EFK_WjpdLExZVDPt4C7yCcxjpXNvIyAOL9zUnKx1VoY/edit?usp=sharing)
 
-**[Chae Young Lee](mailto:acheketa@gmail.com), Youngmin Baek, and Hwalsuk Lee.**
+**[Chae Young Lee](mailto:cylee7133@gmail.com), Youngmin Baek, and Hwalsuk Lee.**
 
 Clova AI Research, NAVER Corp.
 
