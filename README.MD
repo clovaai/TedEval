@@ -124,7 +124,7 @@ python script.py –g=gt/gt.zip –s=result/result.zip
 ```
 - Locate the path of GT and submission file using the flag `-g` and `-s`, respectively.
 - To use TedEval on QUAD datasets, add `-p='{"LTRB" = False}'` in the command or directly modify the setting in `script.py`.
-- If there are transcription or confidence values in your submission file, add `-p='{"CONFIDENCES" = True}' or `-p='{"TRANSCRIPTION" = True}'.
+- If there are transcription or confidence values in your submission file, add `-p='{"CONFIDENCES" = True}` or `-p='{"TRANSCRIPTION" = True}'.
 
 
 ### Run Visualizer
@@ -161,7 +161,7 @@ The file structure should then be:
 ```
 
 ## Contact us
-We welcome any feedbacks to our metric. Please contact the authors via `{acheketa, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
+We welcome any feedbacks to our metric. Please contact the authors via `{cylee7133, youngmin.baek, hwalsuk.lee}@gmail.com`. In case of code errors, open an issue and we will get to you.
 
 ## License
 
