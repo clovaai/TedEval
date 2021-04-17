@@ -19,16 +19,18 @@ def default_evaluation_params():
     default_evaluation_params: Default parameters to use for the validation and evaluation.
     """
     return {
-                'AREA_RECALL_CONSTRAINT' : 0.4,
-                'AREA_PRECISION_CONSTRAINT' :0.4,
-                'EV_PARAM_IND_CENTER_DIFF_THR': 1,
-                'GT_SAMPLE_NAME_2_ID':'.*([0-9]+).*',
-                'DET_SAMPLE_NAME_2_ID':'.*([0-9]+).*',
-                'LTRB':False, #LTRB:2points(left,top,right,bottom) or 4 points(x1,y1,x2,y2,x3,y3,x4,y4)
-                'CRLF':False, #Lines are delimited by Windows CRLF format
-                'CONFIDENCES':False, #Detections must include confidence value. AP will be calculated
-                'PER_SAMPLE_RESULTS':True, #Generate per sample results and produce data for visualization
-                'TRANSCRIPTION':False #Does prediction has transcription or not
+            'AREA_RECALL_CONSTRAINT' : 0.4,
+            'AREA_PRECISION_CONSTRAINT' :0.4,
+            'EV_PARAM_IND_CENTER_DIFF_THR': 1,
+            'GT_SAMPLE_NAME_2_ID':'.*([0-9]+).*',
+            'DET_SAMPLE_NAME_2_ID':'.*([0-9]+).*',
+            'GT_LTRB': False, # LTRB: 2points(left,top,right,bottom) or 4 points(x1,y1,x2,y2,x3,y3,x4,y4)
+            'GT_CRLF': False, # Lines are delimited by Windows CRLF format
+            'DET_LTRB': False, # LTRB: 2points(left,top,right,bottom) or 4 points(x1,y1,x2,y2,x3,y3,x4,y4)
+            'DET_CRLF': False, # Lines are delimited by Windows CRLF format
+            'CONFIDENCES': False, # Detections must include confidence value. AP will be calculated
+            'TRANSCRIPTION': False, # Does prediction has transcription or not
+            'PER_SAMPLE_RESULTS': True, # Generate per sample results and produce data for visualization
             }
 
 def validate_data(gtFilePath, submFilePath,evaluationParams):
@@ -43,14 +45,14 @@ def validate_data(gtFilePath, submFilePath,evaluationParams):
     
     #Validate format of GroundTruth
     for k in gt:
-        rrc_evaluation_funcs.validate_lines_in_file(k,gt[k],evaluationParams['CRLF'],evaluationParams['LTRB'],True)
+        rrc_evaluation_funcs.validate_lines_in_file(k,gt[k],evaluationParams['GT_CRLF'],evaluationParams['GT_LTRB'],True)
 
     #Validate format of results
     for k in subm:
         if (k in gt) == False :
             raise Exception("The sample %s not present in GT" %k)
         
-        rrc_evaluation_funcs.validate_lines_in_file(k,subm[k],evaluationParams['CRLF'],evaluationParams['LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
+        rrc_evaluation_funcs.validate_lines_in_file(k,subm[k],evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
 
     
 def evaluate_method(gtFilePath, submFilePath, evaluationParams):
@@ -306,12 +308,12 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
         evaluationLog = ""
         
-        pointsList,_,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(gtFile,evaluationParams['CRLF'],evaluationParams['LTRB'],True,False)
+        pointsList,_,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(gtFile, evaluationParams['GT_CRLF'], evaluationParams['GT_LTRB'], True, False)
         for n in range(len(pointsList)):
             points = pointsList[n]
             transcription = transcriptionsList[n]
             dontCare = transcription == "###"
-            if evaluationParams['LTRB']:
+            if evaluationParams['GT_LTRB']:
                 gtRect = Rectangle(*points)
                 gtPol = rectangle_to_polygon(gtRect)
                 points = polygon_to_points(gtPol)
@@ -344,11 +346,11 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             
             detFile = rrc_evaluation_funcs.decode_utf8(subm[resFile]) 
 
-            pointsList,confidencesList,_ = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(detFile,evaluationParams['CRLF'],evaluationParams['LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
+            pointsList,confidencesList,_ = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(detFile,evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
             for n in range(len(pointsList)):
                 points = pointsList[n]
                 
-                if evaluationParams['LTRB']:
+                if evaluationParams['DET_LTRB']:
                     detRect = Rectangle(*points)
                     detPol = rectangle_to_polygon(detRect)
                     points = polygon_to_points(detPol)
@@ -552,4 +554,4 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
 if __name__=='__main__':
         
-    rrc_evaluation_funcs.main_evaluation(None,default_evaluation_params,validate_data,evaluate_method)
+    rrc_evaluation_funcs.main_evaluation(None, default_evaluation_params, validate_data, evaluate_method)
