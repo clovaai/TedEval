@@ -149,7 +149,6 @@ For evaluation setup, please refer to the following parameter list to edit `defa
 | TRANSCRIPTION             | `boolean` | `False` | set True if result file has transcription                     |
 | CONFIDENCES               | `boolean` | `False` | set True if result file has confidence                        |
 
-- Note : Please refer to `arg_parser.py` file for additional parameters and default settings used internally.
 
 ### Run Visualizer
 
