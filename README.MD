@@ -95,7 +95,7 @@ pip3 install Polygon3 bottle Pillow
 
 ### Prepare data
 
-The ground truth and the result data should be text files, one for each sample. Note that the naming rule of each text file is that there must be `img_{number}` in the filename and that the number indicate the image sample.
+The ground truth and the result data should be text files, one for each sample. Note that the default naming rule of each text file is that there must be `img_{number}` in the filename and that the number indicate the image sample (this can be changed in `default_evaluation_params()` in `script.py`).
 
 ```
 # gt/gt_img_38.txt
