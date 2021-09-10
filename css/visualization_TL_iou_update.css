@@ -13,6 +13,7 @@
     bottom: 0px; 
 }
 
+
 div.container_canvas{
     width: 50%;
     vertical-align: top;
@@ -35,7 +36,7 @@ div.container_canvas h3, #div_sample_info h3{
     display: none;
 }
 
-#div_sample_info{
+.div_sample_info{
     display: flex;
 }
 
@@ -48,6 +49,26 @@ div.container_canvas h3, #div_sample_info h3{
 }
 
 #div_precision{
+    width: 100%;
+}
+
+#div_detail {
+    width: 100%;
+}
+
+#div_recall_det {
+    flex-grow: 2;
+}
+
+#div_precision_det {
+    flex-grow: 2;
+}
+
+#div_recall_e2e {
+    flex-grow: 2;
+}
+
+#div_precision_e2e {
     flex-grow: 2;
 }
 
@@ -61,9 +82,8 @@ div.container_canvas h3, #div_sample_info h3{
 .div_table{
     display: block;
     box-sizing: border-box;
-    height: 300px;
-    width: 400px;
-    overflow: auto;
+    margin: 5px;
+    border: 1px solid black;
 }
 
 .div_log{
@@ -76,6 +96,8 @@ div.container_canvas h3, #div_sample_info h3{
     border-collapse: collapse;
     border-style: hidden;
     font-size: 12px;
+    padding: 2px;
+    border-spacing: 2px 2px;
 }
 .div_table td{
     text-align: center;
@@ -99,10 +121,19 @@ div.container_canvas h3, #div_sample_info h3{
 .div_table td.OO{
     background-color: rgb(0,190,0);
 }
+
 .div_table td.NO{
     background-color: rgb(38,148,232);
     color: #c8e6c9;
 }
+
+.div_table td.OM{
+    background-color: rgb(38,148,232);
+}
+.div_table td.MO{
+    background-color: rgb(247,169,34);
+}
+
 .div_table td.OO.green{
     color: #006E24;
 }

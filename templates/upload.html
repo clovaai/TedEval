@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>{{title}}</title>
+        <link rel='stylesheet' href="./{{url_for('send_css', path='./style.css') }}" />        
+    </head>
+    <body>
+        
+        <h1><a href="http://rrc.cvc.uab.es/" target="_blank"><img id='logo' src='/scence_text_vis/static/CVC.png'></a>{{title}}</h1>
+        
+        <div class='breadcrumbs'>
+            <a href='/'>Methods</a>
+        </div>    
+        
+        {% if vars["resDict"]['calculated']==False %}
+            <h2>The method has not been calculated</h2>
+            <p>{{vars["resDict"]['Message']}}</p>
+        {%else%}
+            <h2>The method has been calculated</h2>
+            <p>See the <a href='/scence_text_vis/method/?m={{id}}'>method results</a></p>
+        {%endif%}
+        
+    </body>
+</html>

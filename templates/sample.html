@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>{{vars["title"]}}</title>
+    <meta charset="utf-8" />
+
+    <!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js" type="text/javascript"></script> -->
+
+    <!-- <script type="text/javascript" src="{{ url_for('static', filename='jquery-1.8.2.min.js') }}" charset="utf-8"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='jquery-mousewheel.js') }}" charset="utf-8"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='visualization_default.js') }}" charset="utf-8"></script>
+        
+        <script type="text/javascript" src="{{ url_for('static', filename='funcs.js') }}" charset="utf-8"></script> 
+        <script type="text/javascript" src="{{ url_for('static', filename='visualization_TL_iou.js') }}"
+            charset="utf-8"></script>
+    -->
+        
+        <script type="text/javascript" src="../{{ url_for('send_js', path='./jquery-1.8.2.min.js') }}"
+        charset="utf-8"></script>
+
+        <script type="text/javascript" src="../{{ url_for('send_js', path='./jquery-mousewheel.js') }}"
+        charset="utf-8"></script>
+    
+        <!-- <script type="text/javascript" src="/scence_text_vis/{{ url_for('send_js', path='./visualization_default.js') }}"
+        charset="utf-8"></script> -->
+
+        <script type="text/javascript" src="../{{ url_for('send_js', path='./visualization_default_update.js') }}"
+        charset="utf-8"></script>
+
+        <script type="text/javascript" src="../{{ url_for('send_js', path='./funcs.js') }}"
+        charset="utf-8"></script>
+
+        <!-- <script type="text/javascript" src="/scence_text_vis/{{ url_for('send_js', path='./visualization_TL_iou.js') }}"
+        charset="utf-8"></script>         -->
+        
+        <script type="text/javascript" src="../{{ url_for('send_js', path='./visualization_TL_iou_update.js') }}"
+        charset="utf-8"></script>
+
+        <link rel='stylesheet' href="../{{ url_for('send_css', path='/style.css' ) }}" />
+        <link rel='stylesheet' href="../{{ url_for('send_css', path='/jquery-ui.min.css' ) }}" />
+        <link rel='stylesheet' href="../{{ url_for('send_css', path='/visualization.css' ) }}" />
+        <!-- <link rel='stylesheet' href="/scence_text_vis/{{ url_for('send_css', path='/visualization_TL_iou.css' ) }}" /> -->
+        <link rel='stylesheet' href="../{{ url_for('send_css', path='/visualization_TL_iou_update.css' ) }}" />
+        
+    <!-- <link rel='stylesheet' href="{{ url_for('static', filename='style.css' ) }}" />
+    <link rel='stylesheet' href="{{ url_for('static', filename='jquery-ui.min.css' ) }}" />
+    <link rel='stylesheet' href="{{ url_for('static', filename='visualization.css' ) }}" />
+    <link rel='stylesheet' href="{{ url_for('static', filename='visualization_TL_iou.css' ) }}" /> -->
+        <style>
+            tr:hover { 
+        background: rgb(40, 223, 16); 
+        }
+        tr clickable-row { 
+        display: block; 
+        border: 1px solid black;
+        padding: 16px; 
+        }
+        tr {
+            cursor:pointer
+        }
+        </style>
+</head>
+
+<body>
+
+    <h1><a href="http://rrc.cvc.uab.es/" target="_blank"><img id='logo' src='../static/CVC.png'></a>{{vars["title"]}}</h1>
+
+    {% set page = 1 %}
+    {% if vars["sample"] | int >1 %}
+    {% if vars["sample"] % 20 == 0 %}
+    {%set page = 0 + math.ceil(vars["sample"]/20) | int %}
+    {% else%}
+    {%set page = 1 + math.ceil(vars["sample"]/20) | int %}
+    {% endif %}
+    {% endif %}
+    {% set submitId = vars["subm_data"][0] %}
+    {% set methodTitle = vars["subm_data"][1] %}
+    <div class="breadcrumbs">
+        <a href='../'>Methods</a> >
+        <a href="../method/?m={{submitId}}&p={{page}}" style='margin-right: 40px;'>{{methodTitle}}</a>
+
+        {% if (vars['sample'] | int) >1 %}
+        <a class="pure-button button-secondary" href="?m={{submitId}}&sample={{vars['sample']|int-1}}">
+            < previous
+        </a>
+        {% endif %}
+        Sample {{vars['sample']}} of {{vars["num_samples"]}}
+        {% if (vars['sample'] | int) < (vars["num_samples"] | int) %} 
+        <a class="pure-button button-secondary" href="?m={{submitId}}&sample={{vars['sample']|int+1}}">
+            next >
+        </a>
+        {% endif %}
+
+        
+    </div>
+
+    <div id='div_comparation'>
+        <table class='sample_methods'>
+            <thead>
+                <th>Method</th>
+                {%set num_column=-1 %}
+                {%set num_column_order=-1 %}
+                {% for k,v in vars["sample_params"].items() %}
+                {%set num_column = num_column+ 1 %}
+                {% if v['order'] !="" %}
+                {%set num_column_order = num_column %}
+                {%set sort_order=v['order'] %}
+                {% endif %}
+                <th>{{v['long_name']}}</th>
+                {% endfor %}
+            </thead>
+            <tbody>
+                {%set samplesData=[] %}
+                {% for row in vars["samplesValues"] %}
+                {%set sampleData=[row['id'],row['title']] %}
+                {%for k,v in vars["sample_params"].items()%}
+                {{sampleData.append(row[k]) or ""}}
+                {% endfor %}
+                {{samplesData.append(sampleData) or ""}}
+                {% endfor %}
+                {%set samplesData=sorted_samplesData(samplesData,num_column_order,sort_order) %}
+                {%for row in samplesData %}
+                {%if row[0]==submitId %}
+                {%set methodClass="current" %}
+                {%else%}
+                {%set methodClass="other"%}
+                {% endif %}
+                <tr class="{{methodClass}}">
+                    <td class='clickable-row' data-href='../sample/?m={{row[0]}}&sample={{vars["sample"]}}'>{{row[1]}}</td>
+                    {%set index=2 %}
+                    
+                    {%for k,v in vars["sample_params"].items() %}
+                        {%set index = 2 + loop.index0%}
+                        {%set colValue=row[index] %}
+                    {%if v['format']=="perc" %}
+                        {%set value=round(colValue*100,2) | string + " %" %}
+                    {% elif v['type'] == "double" %}
+                        {%set value=round(colValue*100,2) | string %}
+                    {% else %}
+                        {%set value=colValue %}
+                    {% endif %}
+                    <td class='clickable-row' data-href='../sample/?m={{row[0]}}&sample={{vars["sample"]}}'>{{value}}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id='div_sample'></div>
+
+</body>
+<script>
+    jQuery(document).ready(function($) {
+    $(".clickable-row").click(function() {
+        window.location = $(this).data("href");
+    });
+});
+</script>
+</html>

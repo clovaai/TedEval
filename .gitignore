@@ -6,3 +6,5 @@ output/*
 .pyc
 .DS_Store
 *.swp
+.gd/
+gt/

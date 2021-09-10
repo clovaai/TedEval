@@ -7,6 +7,8 @@ import math
 import numpy as np
 import Polygon as plg
 from shapely.geometry import Polygon as shapely_poly
+import concurrent.futures
+from arg_parser import PARAMS
 from tqdm import tqdm
 def evaluation_imports():
     """
@@ -42,6 +44,8 @@ def validate_data(gtFilePath, submFilePath,evaluationParams):
                             Validates also that there are no missing files in the folder.
                             If some error detected, the method raises the error
     """
+    print(gtFilePath)
+    # input()
     gt = rrc_evaluation_funcs.load_zip_file(gtFilePath,evaluationParams['GT_SAMPLE_NAME_2_ID'])
 
     subm = rrc_evaluation_funcs.load_zip_file(submFilePath,evaluationParams['DET_SAMPLE_NAME_2_ID'],True)
@@ -51,6 +55,8 @@ def validate_data(gtFilePath, submFilePath,evaluationParams):
         rrc_evaluation_funcs.validate_lines_in_file(k,gt[k],evaluationParams['GT_CRLF'],evaluationParams['GT_LTRB'],True)
 
     #Validate format of results
+    evaluationParams['TRANSCRIPTION'] = PARAMS.TRANSCRIPTION
+    print(evaluationParams['TRANSCRIPTION'])
     for k in subm:
         if (k in gt) == False :
             pass
@@ -58,6 +64,7 @@ def validate_data(gtFilePath, submFilePath,evaluationParams):
         else:
             rrc_evaluation_funcs.validate_lines_in_file(k,subm[k],evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
 
+        
     
 def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     """
@@ -66,7 +73,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         - method (required)  Global method metrics. Ex: { 'Precision':0.8,'Recall':0.9 }
         - samples (optional) Per sample metrics. Ex: {'sample1' : { 'Precision':0.8,'Recall':0.9 } , 'sample2' : { 'Precision':0.8,'Recall':0.9 }
     """    
-    
     for module,alias in evaluation_imports().items():
         globals()[alias] = importlib.import_module(module)    
     
@@ -170,7 +176,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             chars.append((x,y))
         return chars
 
-    def char_fill(detNums, matchMat):
+    def char_fill(detNums, matchMat,detPols,gtCharPoints,gtCharCounts):
         for detNum in detNums:
             detPol = detPols[detNum]
             for gtNum, gtChars in enumerate(gtCharPoints):
@@ -179,7 +185,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                         if detPol.isInside(gtChar[0], gtChar[1]):
                             gtCharCounts[gtNum][detNum][gtCharNum] = 1
 
-    def one_to_one_match(row, col):
+    def one_to_one_match(row, col,recallMat,precisionMat):
         cont = 0
         for j in range(len(recallMat[0])):    
             if recallMat[row,j] >= evaluationParams['AREA_RECALL_CONSTRAINT'] and precisionMat[row,j] >= evaluationParams['AREA_PRECISION_CONSTRAINT'] :
@@ -197,7 +203,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             return True
         return False
 
-    def one_to_many_match(gtNum):
+    def one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints):
         many_sum = 0
         detRects = []
         for detNum in range(len(recallMat[0])):
@@ -226,7 +232,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         else:
             return False, []
 
-    def many_to_one_match(detNum):
+    def many_to_one_match(detNum,recallMat,precisionMat,gtPols,gtDontCarePolsNum):
         many_sum = 0
         gtRects = []
         for gtNum in range(len(recallMat)):
@@ -252,24 +258,18 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         else:
             return False, []
 
-    perSampleMetrics = {}
-    
-    methodRecallSum = 0
-    methodPrecisionSum = 0
-    
-    Rectangle = namedtuple('Rectangle', 'xmin ymin xmax ymax')
-    
-    gt = rrc_evaluation_funcs.load_zip_file(gtFilePath,evaluationParams['GT_SAMPLE_NAME_2_ID'])
-    subm = rrc_evaluation_funcs.load_zip_file(submFilePath,evaluationParams['DET_SAMPLE_NAME_2_ID'],True)
+    global evalute
+    def evalute(resFile,gt,subm,evaluationParams):
 
-    numGlobalCareGt = 0;
-    numGlobalCareDet = 0;
-    
-    arrGlobalConfidences = [];
-    arrGlobalMatches = [];
-    ### TODO : Optimize using concurrent
-    for resFile in tqdm(gt):
-
+        methodRecallSum = 0
+        methodPrecisionSum = 0
+        
+        numGlobalCareGt = 0
+        numGlobalCareDet = 0
+        
+        arrGlobalConfidences = []
+        arrGlobalMatches = []
+        
         gtFile = rrc_evaluation_funcs.decode_utf8(gt[resFile])
         recall = 0
         precision = 0
@@ -280,7 +280,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         detMatched = 0
         numGtCare = 0
         numDetCare = 0
-        
         recallMat = np.empty([1,1])
         precisionMat = np.empty([1,1])
         matchMat = np.zeros([1,1])
@@ -366,8 +365,12 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                     points = polygon_to_points(detPol)
                 else:
                     ############## Modify by Tran Thuyen 21/05/2021 ##############
-                    # detPol = polygon_from_points(points)          
-                    detPol = MY_POLY(points).make_polygon_obj()
+                    # detPol = polygon_from_points(points)
+                    try:       
+                        detPol = MY_POLY(points).make_polygon_obj()
+                    except ValueError:
+                        print(points,"\t",resFile)
+                        input()
                     ##############################################################
                 detPols.append(detPol)
                 detPolPoints.append(points)
@@ -382,6 +385,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 matchMat = np.zeros(outputShape)
                 gtRectMat = np.zeros(len(gtPols),np.int8)
                 detRectMat = np.zeros(len(detPols),np.int8)
+                global gtExcludeMat,detExcludeMat
                 gtExcludeMat = np.zeros(len(gtPols),np.int8)
                 detExcludeMat = np.zeros(len(detPols),np.int8)
                 for gtNum in range(len(gtPols)):
@@ -430,7 +434,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 evaluationLog += "Find many-to-one matches\n"
                 for detNum in range(len(detPols)):
                     if detNum not in detDontCarePolsNum:
-                        match, matchesGt = many_to_one_match(detNum)
+                        match, matchesGt = many_to_one_match(detNum,recallMat,precisionMat,gtPols,gtDontCarePolsNum)
                         if match:
                             pairs.append({'gt':matchesGt, 'det':[detNum], 'type':'MO'})
                             evaluationLog += "Match GT #" + str(matchesGt) + " with Det #" + str(detNum) + "\n"
@@ -440,7 +444,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 for gtNum in range(len(gtPols)):
                     for detNum in range(len(detPols)):
                         if gtNum not in gtDontCarePolsNum and detNum not in detDontCarePolsNum :
-                            match = one_to_one_match(gtNum, detNum)
+                            match = one_to_one_match(gtNum, detNum,recallMat,precisionMat)
                             if match:
                                 normDist = center_distance(gtPols[gtNum], detPols[detNum]);
                                 normDist /= diag(gtPolPoints[gtNum]) + diag(detPolPoints[detNum]);
@@ -453,7 +457,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 evaluationLog += "Find one-to-many matches\n"
                 for gtNum in range(len(gtPols)):
                     if gtNum not in gtDontCarePolsNum:
-                        match, matchesDet = one_to_many_match(gtNum)
+                        match, matchesDet = one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints)
                         if match:
                             pairs.append({'gt':[gtNum], 'det':matchesDet, 'type':'OM'})
                             evaluationLog += "Match Gt #" + str(gtNum) + " with Det #" + str(matchesDet) + "\n"
@@ -463,7 +467,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                     matchMat[pair['gt'],pair['det']] = 1
                 
                 # Fill character matrix
-                char_fill(np.where(matchMat.sum(axis=0) > 0)[0], matchMat)
+                char_fill(np.where(matchMat.sum(axis=0) > 0)[0], matchMat,detPols,gtCharPoints,gtCharCounts)
 
                 # Recall score
                 for gtNum in range(len(gtRectMat)):
@@ -528,7 +532,9 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         numGlobalCareDet += numDetCare
 
         if evaluationParams['PER_SAMPLE_RESULTS']:
-            perSampleMetrics[resFile] = {
+             
+            # perSampleMetrics[resFile] = 
+            perSampleMetrics_resfile = {
                                             'precision':precision,
                                             'recall':recall,
                                             'hmean':hmean,
@@ -548,7 +554,64 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                                             'evaluationParams': evaluationParams,
                                             'evaluationLog': evaluationLog
                                         }
-                                    
+            
+        return methodRecallSum,methodPrecisionSum,numGlobalCareGt,numGlobalCareDet,perSampleMetrics_resfile,arrGlobalConfidences,arrGlobalMatches,resFile
+
+
+
+    perSampleMetrics = {}
+    
+    methodRecallSum = 0
+    methodPrecisionSum = 0
+    
+    Rectangle = namedtuple('Rectangle', 'xmin ymin xmax ymax')
+    
+    gt = rrc_evaluation_funcs.load_zip_file(gtFilePath,evaluationParams['GT_SAMPLE_NAME_2_ID'])
+    subm = rrc_evaluation_funcs.load_zip_file(submFilePath,evaluationParams['DET_SAMPLE_NAME_2_ID'],True)
+
+    numGlobalCareGt = 0;
+    numGlobalCareDet = 0;
+    
+    arrGlobalConfidences = [];
+    arrGlobalMatches = [];
+    ### TODO : Optimize using concurrent
+    ####### initialize workers #######
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=PARAMS.NUM_WORKERS)
+    futures = []
+    bar_len = len(gt)
+    
+    for resFile in tqdm(gt):
+        # methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile=evalute(resFile,gt,subm,evaluationParams)
+        
+        # methodRecallSum += methodRecallSum_perfile
+        # methodPrecisionSum += methodPrecisionSum_perfile
+        # numGlobalCareGt += numGlobalCareGt_perfile
+        # numGlobalCareDet += numGlobalCareDet_perfile
+        # perSampleMetrics[resFile] = perSampleMetrics_resfile
+        # arrGlobalConfidences.append(arrGlobalConfidences_perfile)
+        # arrGlobalMatches.append(arrGlobalMatches_perfile)
+        future = executor.submit(evalute,resFile,gt,subm,evaluationParams)
+        futures.append(future)
+    with tqdm(total=bar_len) as pbar:
+        pbar.set_description("Integrating results...")
+        
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+                if result != None:
+                    methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile=result
+                    
+                    methodRecallSum += methodRecallSum_perfile
+                    methodPrecisionSum += methodPrecisionSum_perfile
+                    numGlobalCareGt += numGlobalCareGt_perfile
+                    numGlobalCareDet += numGlobalCareDet_perfile
+                    perSampleMetrics[resFile] = perSampleMetrics_resfile
+                    arrGlobalConfidences.append(arrGlobalConfidences_perfile)
+                    arrGlobalMatches.append(arrGlobalMatches_perfile)
+                    pbar.update(1)
+            except:
+                pass
+    executor.shutdown()
     # Compute MAP and MAR
     AP = 0
     if evaluationParams['CONFIDENCES']:
@@ -561,7 +624,10 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     methodMetrics = {'recall':methodRecall, 'precision':methodPrecision, 'hmean':methodHmean, 'AP':AP  }
     
     resDict = {'calculated':True,'Message':'','method': methodMetrics,'per_sample': perSampleMetrics}
-    
+    # import json
+    # print("Here")
+    # with open('temp.json','w') as f:
+    #     json.dump(resDict,f,indent=2)
     return resDict;
 
 class MY_POLY():
@@ -599,7 +665,6 @@ class MY_POLY():
                 self.points.append(point_x[0])
             self.num_points = len(self.points) // 2
         return plg.Polygon(np.stack([point_x, point_y], axis=1))
-
 
 
 

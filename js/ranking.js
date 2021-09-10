@@ -27,7 +27,7 @@ function delete_methods(){
     if(!confirm("Are you sure to delete all methods?")){
         return;
     }
-    var url = "/delete_all";
+    var url = "/scence_text_vis/delete_all";
     $.post(url, function (data) {
         document.location.reload();
     });
@@ -37,7 +37,7 @@ function delete_method(id){
     if(!confirm("Are you sure to delete the method?")){
         return;
     }
-    var url = "/delete_method";
+    var url = "./delete_method";
     $.post(url,{"id":id} , function (data) {
         document.location.reload();
     });
@@ -48,7 +48,7 @@ function edit_method(id,el){
     var current_name = $(el).closest("tr").find("span.title").text();
     var name = prompt("Enter the method's name", current_name);
     if (name != null) {
-        var url = "/edit_method";
+        var url = "./edit_method";
         $.post(url,{"id":id,"name":name} , function (data) {
             document.location.reload();
         });
@@ -60,7 +60,7 @@ function upload_subm(){
 }
 
 function wait_screen(msg){
-    $("body").append("<div class='overlay'>" + (msg!=undefined? "<div class='info'><span class='msg'>" + msg + "</span><img class='wait' src='/static/wait.gif'></div>" : "<img src='/static/wait.gif'>") + "</div>");
+    $("body").append("<div class='overlay'>" + (msg!=undefined? "<div class='info'><span class='msg'>" + msg + "</span><img class='wait' src='../static/wait.gif'></div>" : "<img src='../static/wait.gif'>") + "</div>");
 }
 
 function close_overlay(){
@@ -85,12 +85,12 @@ $(document).ready( function(){
     $("form").submit(function() {
        wait_screen("Please wait, your results are being uploaded,validated and evaluated..");
        var options = {
-       url : '/evaluate?json=1' ,
+       url : './evaluate' ,
        dataType: 'json',
        success : function(result){
            close_overlay();
            if (result.calculated){
-               document.location.href = "/method/?m=" + result.id;
+               document.location.href = "./method/?m=" + result.id;
            }else{
                show_error(result.Message);
            }

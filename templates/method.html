@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{{vars["title"]}}</title>
+        <meta charset="utf-8" />
+        <link rel='stylesheet' href="/static/style.css" />
+    
+        <link rel='stylesheet' href="../{{url_for('static', filename ='style.css')}}" />
+        <script type="text/javascript" src="../{{ url_for('static', filename ='jquery-1.8.2.min.js') }}"
+            charset="utf-8"></script>
+        <script type="text/javascript" src="../{{ url_for('static', filename ='jquery.form-3.51.js') }}"
+            charset="utf-8"></script>
+        <script type="text/javascript" src="../{{ url_for('static', filename ='ranking.js') }}" charset="utf-8"></script>
+        <script type='text/javascript' src='../https://www.google.com/jsapi'></script>
+    </head>
+    
+    <body contenteditable="false">
+        <h1><a href="http://rrc.cvc.uab.es/" target="_blank">
+            <img id='logo' src='../static/CVC.png'></a>{{vars["title"]}}</h1>
+        <div class='breadcrumbs'>
+            <a href='../'>Methods</a> > {{vars["subm_data"]["methodTitle"]}}
+        </div>        
+        {% set zip_path = "./output/results_"+vars["id"]+".zip"%}
+        {% set result = json.loads(zipfile(zip_path).read('method.json')) %}
+        {% if result==None %}
+        <h2>Submit your method</h2>
+        {% elif result['calculated']==False%}
+        <h2>The method has not been calculated</h2>
+        <p>{{result['Message']}}</p>
+        {% else %}
+        <div class="summary">
+            <h2>Method summary</h2>
+            <p>Title: <strong>{{vars["subm_data"]["methodTitle"]}}</strong> [{{vars["subm_data"]["submitId"]}}]</p>
+            <p>Submit date: {{vars["subm_data"]["submitDate"]}}</p>
+            {% for k,v in vars["method_params"].items()%}
+                {% set colValue = result['method'][k] %}
+                {% if v['format'] == "perc" %}
+                    {% set value = round(colValue*100,2) |string + " %" %}
+                {%elif v['type'] == "double" %}
+                    {% set value = round(colValue*100,2)  %}
+                {%else%}
+                    {% set value = colValue %}
+                {%endif%}       
+                <p>{{v['long_name']}}: <strong>{{value}}</strong></p>
+            {% endfor %}
+        </div>
+        {% endif%}
+    
+        <div class='navigation'>
+            {% set num_pages = math.ceil(vars["images"].__len__() | float / 20) | int %}
+            {% if vars["page"]>1 %}
+                <a class="pure-button button-secondary" href='../method/?m={{vars["subm_data"]["submitId"]}}&p={{vars["page"]-1}}'>< previous</a>
+            {% endif %}
+            <span class='current'>Page {{vars["page"]}} of {{num_pages}}</span>
+            {% if vars["page"] < num_pages %}
+                <a class="pure-button button-secondary" href='../method/?m={{vars["subm_data"]["submitId"]}}&p={{vars["page"]+1}}'>next ></a>
+            {% endif %}
+        </div>
+    
+        <div class="samples_list">
+                {% for name in vars["images"][(vars["page"]-1)*20:vars["page"]*20] %}
+                    {% set index = loop.index0 %}
+                    {% set sampleId = image_name_to_id(name) %}
+                    {% set values = custom_json_filter(zip_path,sampleId)%}
+                    {% set sample = (vars["page"]-1)*20+index+1 %}
+                    <div class='sample'>
+                        <a href='../sample/?m={{vars["subm_data"]["submitId"]}}&sample={{sample|string}}'>
+                            <img src='../image_thumb/?c={{acronym}}&sample={{sample|string}}' alt='{{name}}'></a>
+                        <p><a href='../sample/?m={{vars["subm_data"]["submitId"]}}&sample={{sample|string}}'>Sample: {{ sample|string}}</a></p>
+                        <p><a href='../sample/?m={{vars["subm_data"]["submitId"]}}&sample={{sample|string}}'>ID: {{sampleId}}</a></p>
+                        {% for k,v in vars["sample_params"].items()%}
+                            {%set colValue = values[k] %}
+                            {% if v['format'] == "perc" %}
+                                {% set value = round(colValue*100,2) | string + " %" %}
+                            {% elif v['type'] == "double" %}
+                                {% set value = round(colValue*100,2) | string %}
+                            {% else %}
+                                {% set value = colValue %}
+                            {% endif %}       
+                            <p>{{v['long_name']}}: <strong>{{value}}</strong></p>
+                        {%endfor%}                      
+                    </div>
+                {%endfor%}
+        <br>
+    </body>
+</html>

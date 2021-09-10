@@ -34,7 +34,7 @@ var ClassVisualization = function(){
     this.load_sample_info = function(){
         //web.pantalla_espera();
         
-        var urlInfo = "/sampleInfo/?m=" + getUrlParameter("m");
+        var urlInfo = "/scence_text_vis/sampleInfo/?m=" + getUrlParameter("m");
         var extraParmasNames = ["file","eval","sample","gtv"];
         for(var i=0;i<extraParmasNames.length;i++){
             var parameterValue = getUrlParameter( extraParmasNames[i] );
@@ -326,7 +326,7 @@ var ClassVisualization = function(){
 };
 
 ClassVisualization.prototype.load_visualization = function(){
-    var urlGtImg = "/image/?sample=" + getUrlParameter("sample");
+    var urlGtImg = "/scence_text_vis/image/?sample=" + getUrlParameter("sample");
     var extraParmasNames = ["ch","task","gtv"];
     for(var i=0;i<extraParmasNames.length;i++){
         var parameterValue = getUrlParameter( extraParmasNames[i] );

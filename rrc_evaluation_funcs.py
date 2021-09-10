@@ -9,6 +9,22 @@ import os
 import codecs
 import importlib
 from io import StringIO
+from arg_parser import PARAMS
+
+
+COORS_4            = '^'+ ','.join(['\s*(-?[0-9]+)\s*']*4)
+POINT_TRANS_CONF_4 = COORS_4 + ',\s*([0-1].?[0-9]*)\s*,(.*)$'
+POINT_TRANS_4      = COORS_4 + ',(.*)$'
+POINT_CONF_4       = COORS_4 + ',\s*([0-1].?[0-9]*)\s*$'
+POINT_ONLY_4       = COORS_4 + '$'
+
+COORS_8            = '^'+ ','.join(['\s*(-?[0-9]+)\s*']*8)
+POINT_TRANS_CONF_8 = COORS_8 + ',\s*([0-1].?[0-9]*)\s*,(.*)$'
+POINT_TRANS_8      = COORS_8 + ',(.*)$'
+POINT_CONF_8       = COORS_8 + ',\s*([0-1].?[0-9]*)\s*$'
+POINT_ONLY_8       = COORS_8 + '$'
+from arg_parser import PARAMS
+
 
 def print_help():
     sys.stdout.write('Usage: python %s.py -g=<gtFile> -s=<submFile> [-o=<outputFolder> -p=<jsonParams>]' %sys.argv[0])
@@ -101,11 +117,11 @@ def validate_lines_in_file(fileName,file_contents,CRLF=True,LTRB=True,withTransc
     lines = utf8File.split( "\r\n" if CRLF else "\n" )
     for line in lines:
         line = line.replace("\r","").replace("\n","")
-        # if(line != ""):
-        #     try:
-        #         validate_tl_line(line,LTRB,withTranscription,withConfidence,imWidth,imHeight)
-        #     except Exception as e:
-        #         raise Exception(("Line in sample not valid. Sample: %s Line: %s Error: %s" %(fileName,line,str(e))).encode('utf-8', 'replace'))
+        if(line != ""):
+            try:
+                validate_tl_line(line,LTRB,withTranscription,withConfidence,imWidth,imHeight)
+            except Exception as e:
+                raise Exception(("Line in sample not valid. Sample: %s Line: %s Error: %s" %(fileName,line,str(e))).encode('utf-8', 'replace'))
     
    
    
@@ -134,8 +150,9 @@ def get_tl_line_values(line,LTRB=True,withTranscription=False,withConfidence=Fal
     points = []
     
     numPoints = 4;
-    
-    if LTRB:
+    # withTranscription = True
+    withConfidence = False
+    if PARAMS.BOX_TYPE == "LTRB":
     
         numPoints = 4;
         
@@ -172,26 +189,26 @@ def get_tl_line_values(line,LTRB=True,withTranscription=False,withConfidence=Fal
             validate_point_inside_bounds(xmin,ymin,imWidth,imHeight);
             validate_point_inside_bounds(xmax,ymax,imWidth,imHeight);
 
-    else:
-        
+    elif PARAMS.BOX_TYPE == "QUAD":
         numPoints = 8;
 
         if withTranscription and withConfidence:
-            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-1].?[0-9]*)\s*,(.*)$',line)
+            m = re.match(POINT_TRANS_CONF_8,line)
             if m == None :
                 raise Exception("Format incorrect. Should be: x1,y1,x2,y2,x3,y3,x4,y4,confidence,transcription")
         elif withConfidence:
-            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-1].?[0-9]*)\s*$',line)
+            m = re.match(POINT_CONF_8,line)
             if m == None :
                 raise Exception("Format incorrect. Should be: x1,y1,x2,y2,x3,y3,x4,y4,confidence")
         elif withTranscription:
-            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,(.*)$',line)
+            m = re.match(POINT_TRANS_8,line)
             if m == None :
                 raise Exception("Format incorrect. Should be: x1,y1,x2,y2,x3,y3,x4,y4,transcription")
         else:
             if line[-1] == ',' : line = line[:-1]
-            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*$',line)
+            m = re.match(POINT_ONLY_8,line)
             if m == None :
+                print(line)
                 raise Exception("Format incorrect. Should be: x1,y1,x2,y2,x3,y3,x4,y4")
             
         points = [ float(m.group(i)) for i in range(1, (numPoints+1) ) ]
@@ -203,7 +220,46 @@ def get_tl_line_values(line,LTRB=True,withTranscription=False,withConfidence=Fal
             validate_point_inside_bounds(points[2],points[3],imWidth,imHeight);
             validate_point_inside_bounds(points[4],points[5],imWidth,imHeight);
             validate_point_inside_bounds(points[6],points[7],imWidth,imHeight);
-            
+    elif PARAMS.BOX_TYPE == "POLY":
+        box_type = POLY
+        # TODO: TotalText GT보고 정하기
+        # TODO: 이렇게 리턴하는 건 굉장히 위험
+        splitted_line = line.split(',')
+        tmp_transcription = list()
+
+        if withTranscription:
+            tmp_transcription.append(splitted_line.pop())
+            while not len("".join(tmp_transcription)):
+                tmp_transcription.append(splitted_line.pop())
+
+        if withConfidence:
+            if len(splitted_line) % 2 != 0:
+                confidence = float(splitted_line.pop())
+                points = [float(x) for x in splitted_line]
+            else:
+                backward_idx = len(splitted_line)-1
+                while backward_idx > 0:
+                    if splitted_line[backward_idx].isdigit() and len(splitted_line) % 2 != 0:
+                        break
+                    tmp_transcription.append(splitted_line.pop())
+                    backward_idx -= 1
+                confidence = float(splitted_line.pop())
+                points = [float(x) for x in splitted_line]
+        else:
+            if len(splitted_line) % 2 == 0:
+                points = [float(x) for x in splitted_line]
+            else:
+                backward_idx = len(splitted_line) - 1
+                while backward_idx > 0:
+                    if splitted_line[backward_idx].isdigit():
+                        break
+                    tmp_transcription.append(splitted_line.pop())
+                    backward_idx -= 1
+                points = [float(x) for x in splitted_line]
+
+        transcription = ",".join(tmp_transcription)
+        return points,confidence,transcription
+        # return POLY(points, confidence=confidence, transcription=transcription)
     
     if withConfidence:
         try:
@@ -289,12 +345,16 @@ def main_evaluation(p,default_evaluation_params_fn,validate_data_fn,evaluate_met
     validate_data_fn: points to a method that validates the corrct format of the submission
     evaluate_method_fn: points to a function that evaluated the submission and return a Dictionary with the results
     """
-    
+    global PARAMS
     if (p == None):
-        p = dict([s[1:].split('=') for s in sys.argv[1:]])
+        p = {}
+        p['g'] = PARAMS.GT_PATH
+        p['s'] = PARAMS.SUBMIT_PATH
+        # p = dict([s[1:].split('=') for s in sys.argv[1:]])
         if(len(sys.argv)<3):
             print_help()
-
+    # print(p['p'])
+    # input()
     evalParams = default_evaluation_params_fn()
     if 'p' in p.keys():
         evalParams.update( p['p'] if isinstance(p['p'], dict) else json.loads(p['p'][1:-1]) )
@@ -356,3 +416,198 @@ def main_validation(default_evaluation_params_fn,validate_data_fn):
     validate_data_fn(p['g'], p['s'], evalParams)              
     print ('SUCCESS')
     sys.exit(0)
+
+
+
+############## Modify by Tran Thuyen 21/05/2021 ##############
+
+'''
+From CLEval
+'''
+from box_types import Box, QUAD, POLY
+
+
+def parse_single_file(content, CRLF=True, LTRB=True, withTranscription=False, withConfidence=False, img_width=0, img_height=0, sort_by_confidences=True):
+    """
+    Returns all points, confindences and transcriptions of a file in lists. Valid line formats:
+    xmin,ymin,xmax,ymax,[confidence],[transcription]
+    x1,y1,x2,y2,x3,y3,x4,y4,[confidence],[transcription]
+    """
+    result_boxes = []
+
+    lines = content.split("\r\n" if CRLF else "\n")
+    for line in lines:
+        line = line.replace("\r", "").replace("\n", "")
+        if line != "":
+            result_box = parse_values_from_single_line(line, withTranscription, withConfidence, img_width, img_height)
+            result_boxes.append(result_box)
+
+    if withConfidence and len(result_boxes) and sort_by_confidences:
+        result_boxes.sort(key=lambda x: x.confidence, reverse=True)
+        
+    return result_boxes
+
+
+
+
+def parse_values_from_single_line(line, withTranscription=False, withConfidence=False, img_width=0, img_height=0):
+    """
+    Validate the format of line. If the line is not valid, an exception will be raised.
+    If max_width, and max_height are specified, all poi
+    :param line:
+    :param withTranscription:
+    :param withConfidence:
+    :param img_width:
+    :param img_height:
+    :return:
+    """
+    """
+    Validate the format of the line. If the line is not valid an exception will be raised.
+    If maxWidth and maxHeight are specified, all points must be inside the imgage bounds.
+    Posible values are:
+    LTRB=True: xmin,ymin,xmax,ymax[,confidence][,transcription] 
+    LTRB=False: x1,y1,x2,y2,x3,y3,x4,y4[,confidence][,transcription]
+    LTRB="POLY": x1,y1,x2,y2,x3,y3,x4,y4[,confidence][,transcription]
+
+    box_type:
+        - LTRB: add description
+        - QUAD: add description
+        - POLY: add description
+
+    Returns values from a textline. Points , [Confidences], [Transcriptions]
+    """
+    confidence = 0.0
+    transcription = ""
+    points = []
+    box_type = None
+    
+    numPoints = 4
+    if PARAMS.BOX_TYPE == "LTRB":
+        box_type = QUAD
+        numPoints = 4
+        
+        if withTranscription and withConfidence:
+            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-1].?[0-9]*)\s*,(.*)$',line)
+            if m == None :
+                m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-1].?[0-9]*)\s*,(.*)$',line)
+                raise Exception("Format incorrect. Should be: xmin,ymin,xmax,ymax,confidence,transcription")
+        elif withConfidence:
+            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-1].?[0-9]*)\s*$',line)
+            if m == None :
+                raise Exception("Format incorrect. Should be: xmin,ymin,xmax,ymax,confidence")
+        elif withTranscription:
+            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*,(.*)$', line)
+            if m == None :
+                raise Exception("Format incorrect. Should be: xmin,ymin,xmax,ymax,transcription")
+        else:
+            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*,?\s*$', line)
+            if m == None :
+                raise Exception("Format incorrect. Should be: xmin,ymin,xmax,ymax")
+            
+        xmin = int(m.group(1))
+        ymin = int(m.group(2))
+        xmax = int(m.group(3))
+        ymax = int(m.group(4))
+
+        validate_min_max_bounds(lower_val=xmin, upper_val=xmax)
+        validate_min_max_bounds(lower_val=ymin, upper_val=ymax)
+
+        points = [float(m.group(i)) for i in range(1, (numPoints+1))]
+        points = convert_LTRB2QUAD(points)
+
+        if img_width > 0 and img_height > 0:
+            validate_point_inside_bounds(xmin, ymin, img_width, img_height)
+            validate_point_inside_bounds(xmax, ymax, img_width, img_height)
+
+    elif PARAMS.BOX_TYPE == "QUAD":
+        box_type = QUAD
+        
+        numPoints = 8
+
+        if withTranscription and withConfidence:
+            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-1].?[0-9]*)\s*,(.*)$',line)
+            if m == None :
+                raise Exception("Format incorrect. Should be: x1,y1,x2,y2,x3,y3,x4,y4,confidence,transcription")
+        elif withConfidence:
+            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*([0-1].?[0-9]*)\s*$',line)
+            if m == None :
+                raise Exception("Format incorrect. Should be: x1,y1,x2,y2,x3,y3,x4,y4,confidence")
+        elif withTranscription:
+            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,(.*)$',line)
+            if m == None :
+                raise Exception("Format incorrect. Should be: x1,y1,x2,y2,x3,y3,x4,y4,transcription")
+        else:
+            if line[-1] == ',' : line = line[:-1]
+            m = re.match(r'^\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*,\s*(-?[0-9]+)\s*$',line)
+            if m == None :
+                raise Exception("Format incorrect. Should be: x1,y1,x2,y2,x3,y3,x4,y4")
+            
+        points = [float(m.group(i)) for i in range(1, (numPoints+1))]
+        
+        validate_clockwise_points(points)
+        
+        if img_width > 0 and img_height > 0:
+            validate_point_inside_bounds(points[0], points[1], img_width, img_height)
+            validate_point_inside_bounds(points[2], points[3], img_width, img_height)
+            validate_point_inside_bounds(points[4], points[5], img_width, img_height)
+            validate_point_inside_bounds(points[6], points[7], img_width, img_height)
+
+    elif PARAMS.BOX_TYPE == "POLY":
+        box_type = POLY
+        # TODO: TotalText GT보고 정하기
+        # TODO: 이렇게 리턴하는 건 굉장히 위험
+        splitted_line = line.split(',')
+        tmp_transcription = list()
+
+        if withTranscription:
+            tmp_transcription.append(splitted_line.pop())
+            while not len("".join(tmp_transcription)):
+                tmp_transcription.append(splitted_line.pop())
+
+        if withConfidence:
+            if len(splitted_line) % 2 != 0:
+                confidence = float(splitted_line.pop())
+                points = [float(x) for x in splitted_line]
+            else:
+                backward_idx = len(splitted_line)-1
+                while backward_idx > 0:
+                    if splitted_line[backward_idx].isdigit() and len(splitted_line) % 2 != 0:
+                        break
+                    tmp_transcription.append(splitted_line.pop())
+                    backward_idx -= 1
+                confidence = float(splitted_line.pop())
+                points = [float(x) for x in splitted_line]
+        else:
+            if len(splitted_line) % 2 == 0:
+                points = [float(x) for x in splitted_line]
+            else:
+                backward_idx = len(splitted_line) - 1
+                while backward_idx > 0:
+                    if splitted_line[backward_idx].isdigit():
+                        break
+                    tmp_transcription.append(splitted_line.pop())
+                    backward_idx -= 1
+                points = [float(x) for x in splitted_line]
+
+        transcription = ",".join(tmp_transcription)
+        return POLY(points, confidence=confidence, transcription=transcription)
+
+    # QUAD or LTRB format
+    if withConfidence:
+        try:
+            confidence = float(m.group(numPoints+1))
+        except ValueError:
+            raise Exception("Confidence value must be a float")       
+            
+    if withTranscription:
+        posTranscription = numPoints + (2 if withConfidence else 1)
+        transcription = m.group(posTranscription)
+        m2 = re.match(r'^\s*\"(.*)\"\s*$', transcription)
+        if m2 != None :  # Transcription with double quotes, we extract the value and replace escaped characters
+            transcription = m2.group(1).replace("\\\\", "\\").replace("\\\"", "\"")
+
+    result_box = box_type(points, confidence=confidence, transcription=transcription)
+    return result_box
+
+
+##############################################################
