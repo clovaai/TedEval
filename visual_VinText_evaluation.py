@@ -33,7 +33,7 @@ from PIL import Image
 
 app = Flask(__name__)
 app.secret_key = "secret key"
-gTArchivePath = os.path.join(".","gt","baker_gt.zip")
+gTArchivePath = os.path.join(".","gt","gt.zip")
 gTArchive = zipfile.ZipFile(gTArchivePath,'r')
 
 def image_name_to_id(name):
@@ -48,7 +48,7 @@ def image_name_to_id(name):
 
 
 def get_sample_id_from_num(num):
-    imagesFilePath = os.path.join(".","gt","baker_images.zip")
+    imagesFilePath = os.path.join(".","gt","images.zip")
     archive = zipfile.ZipFile(imagesFilePath,'r')
     current = 0
     for image in archive.namelist():
@@ -60,7 +60,7 @@ def get_sample_id_from_num(num):
     return False
 	
 def get_sample_from_num(num):
-    imagesFilePath = os.path.join(".","gt","baker_images.zip")
+    imagesFilePath = os.path.join(".","gt","images.zip")
     archive = zipfile.ZipFile(imagesFilePath,'r')
     current = 0
     for image in archive.namelist():
@@ -72,7 +72,7 @@ def get_sample_from_num(num):
     return False	
 
 def get_samples():
-    imagesFilePath = os.path.join(".","gt","baker_images.zip")
+    imagesFilePath = os.path.join(".","gt","images.zip")
     archive = zipfile.ZipFile(imagesFilePath,'r')
     num_samples = 0
     samples_list = []
