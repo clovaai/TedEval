@@ -10,6 +10,7 @@ from shapely.geometry import Polygon as shapely_poly
 import concurrent.futures
 from arg_parser import PARAMS
 from tqdm import tqdm
+import multiprocess as mp
 def evaluation_imports():
     """
     evaluation_imports: Dictionary ( key = module name , value = alias  )  with python modules used in the evaluation. 
@@ -65,7 +66,6 @@ def validate_data(gtFilePath, submFilePath,evaluationParams):
             rrc_evaluation_funcs.validate_lines_in_file(k,subm[k],evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
 
         
-    
 def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     """
     Method evaluate_method: evaluate method and returns the results
@@ -203,7 +203,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             return True
         return False
 
-    def one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints):
+    def one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints,gtExcludeMat,detExcludeMat):
         many_sum = 0
         detRects = []
         for detNum in range(len(recallMat[0])):
@@ -232,7 +232,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         else:
             return False, []
 
-    def many_to_one_match(detNum,recallMat,precisionMat,gtPols,gtDontCarePolsNum):
+    def many_to_one_match(detNum,recallMat,precisionMat,gtPols,gtDontCarePolsNum,gtExcludeMat,detExcludeMat):
         many_sum = 0
         gtRects = []
         for gtNum in range(len(recallMat)):
@@ -258,7 +258,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         else:
             return False, []
 
-    global evalute
+    # global evalute
     def evalute(resFile,gt,subm,evaluationParams):
 
         methodRecallSum = 0
@@ -434,7 +434,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 evaluationLog += "Find many-to-one matches\n"
                 for detNum in range(len(detPols)):
                     if detNum not in detDontCarePolsNum:
-                        match, matchesGt = many_to_one_match(detNum,recallMat,precisionMat,gtPols,gtDontCarePolsNum)
+                        match, matchesGt = many_to_one_match(detNum,recallMat,precisionMat,gtPols,gtDontCarePolsNum,gtExcludeMat,detExcludeMat)
                         if match:
                             pairs.append({'gt':matchesGt, 'det':[detNum], 'type':'MO'})
                             evaluationLog += "Match GT #" + str(matchesGt) + " with Det #" + str(detNum) + "\n"
@@ -457,7 +457,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 evaluationLog += "Find one-to-many matches\n"
                 for gtNum in range(len(gtPols)):
                     if gtNum not in gtDontCarePolsNum:
-                        match, matchesDet = one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints)
+                        match, matchesDet = one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints,gtExcludeMat,detExcludeMat)
                         if match:
                             pairs.append({'gt':[gtNum], 'det':matchesDet, 'type':'OM'})
                             evaluationLog += "Match Gt #" + str(gtNum) + " with Det #" + str(matchesDet) + "\n"
@@ -558,7 +558,11 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         return methodRecallSum,methodPrecisionSum,numGlobalCareGt,numGlobalCareDet,perSampleMetrics_resfile,arrGlobalConfidences,arrGlobalMatches,resFile
 
 
-
+    def calculatestar(args):
+        def calculate(func, args):
+            result = func(*args)
+            return result
+        return calculate(*args)
     perSampleMetrics = {}
     
     methodRecallSum = 0
@@ -576,42 +580,59 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     arrGlobalMatches = [];
     ### TODO : Optimize using concurrent
     ####### initialize workers #######
-    executor = concurrent.futures.ProcessPoolExecutor(max_workers=PARAMS.NUM_WORKERS)
-    futures = []
-    bar_len = len(gt)
-    
-    for resFile in tqdm(gt):
-        # methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile=evalute(resFile,gt,subm,evaluationParams)
+    # executor = concurrent.futures.ProcessPoolExecutor(max_workers=PARAMS.NUM_WORKERS)
+    # futures = []
+    # bar_len = len(gt)
+
+    ############ Old script ############ 
+    # for resFile in tqdm(gt):
+    #     # methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile=evalute(resFile,gt,subm,evaluationParams)
         
-        # methodRecallSum += methodRecallSum_perfile
-        # methodPrecisionSum += methodPrecisionSum_perfile
-        # numGlobalCareGt += numGlobalCareGt_perfile
-        # numGlobalCareDet += numGlobalCareDet_perfile
-        # perSampleMetrics[resFile] = perSampleMetrics_resfile
-        # arrGlobalConfidences.append(arrGlobalConfidences_perfile)
-        # arrGlobalMatches.append(arrGlobalMatches_perfile)
-        future = executor.submit(evalute,resFile,gt,subm,evaluationParams)
-        futures.append(future)
-    with tqdm(total=bar_len) as pbar:
-        pbar.set_description("Integrating results...")
+    #     # methodRecallSum += methodRecallSum_perfile
+    #     # methodPrecisionSum += methodPrecisionSum_perfile
+    #     # numGlobalCareGt += numGlobalCareGt_perfile
+    #     # numGlobalCareDet += numGlobalCareDet_perfile
+    #     # perSampleMetrics[resFile] = perSampleMetrics_resfile
+    #     # arrGlobalConfidences.append(arrGlobalConfidences_perfile)
+    #     # arrGlobalMatches.append(arrGlobalMatches_perfile)
+    #     future = executor.submit(evalute,resFile,gt,subm,evaluationParams)
+    #     futures.append(future)
+    # with tqdm(total=bar_len) as pbar:
+    #     pbar.set_description("Integrating results...")
         
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                result = future.result()
-                if result != None:
-                    methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile=result
+    #     for future in concurrent.futures.as_completed(futures):
+    #         try:
+    #             result = future.result()
+    #             if result != None:
+    #                 methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile=result
                     
-                    methodRecallSum += methodRecallSum_perfile
-                    methodPrecisionSum += methodPrecisionSum_perfile
-                    numGlobalCareGt += numGlobalCareGt_perfile
-                    numGlobalCareDet += numGlobalCareDet_perfile
-                    perSampleMetrics[resFile] = perSampleMetrics_resfile
-                    arrGlobalConfidences.append(arrGlobalConfidences_perfile)
-                    arrGlobalMatches.append(arrGlobalMatches_perfile)
-                    pbar.update(1)
-            except:
-                pass
-    executor.shutdown()
+    #                 methodRecallSum += methodRecallSum_perfile
+    #                 methodPrecisionSum += methodPrecisionSum_perfile
+    #                 numGlobalCareGt += numGlobalCareGt_perfile
+    #                 numGlobalCareDet += numGlobalCareDet_perfile
+    #                 perSampleMetrics[resFile] = perSampleMetrics_resfile
+    #                 arrGlobalConfidences.append(arrGlobalConfidences_perfile)
+    #                 arrGlobalMatches.append(arrGlobalMatches_perfile)
+    #                 pbar.update(1)
+    #         except:
+    #             pass
+    # executor.shutdown()
+    #########################################
+
+    ### Assign jobs
+    TASKS = [(evalute, (resFile,gt,subm,evaluationParams)) for resFile in gt]
+    with mp.Pool(processes=4) as pool:
+        for results in tqdm(pool.map(calculatestar,TASKS),total = 10):
+            methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,\
+            perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile = results
+
+            methodRecallSum += methodRecallSum_perfile
+            methodPrecisionSum += methodPrecisionSum_perfile
+            numGlobalCareGt += numGlobalCareGt_perfile
+            numGlobalCareDet += numGlobalCareDet_perfile
+            perSampleMetrics[resFile] = perSampleMetrics_resfile
+            arrGlobalConfidences.append(arrGlobalConfidences_perfile)
+            arrGlobalMatches.append(arrGlobalMatches_perfile)
     # Compute MAP and MAR
     AP = 0
     if evaluationParams['CONFIDENCES']:

@@ -25,6 +25,7 @@ import rrc_evaluation_funcs
 from termcolor import colored
 from config.config import *
 evaluation_script = 'script_update'
+from script_update import evaluate_method
 from arg_parser import PARAMS
 
 from PIL import Image
@@ -32,8 +33,7 @@ from PIL import Image
 
 app = Flask(__name__)
 app.secret_key = "secret key"
-
-gTArchivePath = os.path.dirname(os.path.abspath(__file__)) + "/gt/gt_vin.zip"
+gTArchivePath = os.path.join(".","gt","baker_gt.zip")
 gTArchive = zipfile.ZipFile(gTArchivePath,'r')
 
 def image_name_to_id(name):
@@ -48,7 +48,7 @@ def image_name_to_id(name):
 
 
 def get_sample_id_from_num(num):
-    imagesFilePath = os.path.dirname(os.path.abspath(__file__)) + "/gt/Vin_images.zip"
+    imagesFilePath = os.path.join(".","gt","baker_images.zip")
     archive = zipfile.ZipFile(imagesFilePath,'r')
     current = 0
     for image in archive.namelist():
@@ -60,7 +60,7 @@ def get_sample_id_from_num(num):
     return False
 	
 def get_sample_from_num(num):
-    imagesFilePath = os.path.dirname(os.path.abspath(__file__)) + "/gt/Vin_images.zip"
+    imagesFilePath = os.path.join(".","gt","baker_images.zip")
     archive = zipfile.ZipFile(imagesFilePath,'r')
     current = 0
     for image in archive.namelist():
@@ -72,7 +72,7 @@ def get_sample_from_num(num):
     return False	
 
 def get_samples():
-    imagesFilePath = os.path.dirname(os.path.abspath(__file__)) + "/gt/Vin_images.zip"
+    imagesFilePath = os.path.join(".","gt","baker_images.zip")
     archive = zipfile.ZipFile(imagesFilePath,'r')
     num_samples = 0
     samples_list = []
@@ -85,7 +85,7 @@ def get_samples():
 
 @app.route('/delete_all', methods=['POST'])
 def delete_all():
-    output_folder = os.path.dirname(os.path.abspath(__file__)) + "/output"
+    output_folder = os.path.join(".", "output")
     try:    
         for root, dirs, files in os.walk(output_folder, topdown=False):
             for f in files:
@@ -99,7 +99,7 @@ def delete_all():
 @app.route('/delete_method', methods=['POST'])
 def delete_method():
     id = request.form['id']
-    dbPath = os.path.dirname(os.path.abspath(__file__)) + "/output/submits"
+    dbPath = os.path.join(".","output","submits")
     conn = sqlite3.connect(dbPath)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM submission WHERE id=?',(id))
@@ -107,7 +107,7 @@ def delete_method():
     conn.close()
     
     try:
-        output_folder = os.path.dirname(os.path.abspath(__file__)) + "/output/results_" + id
+        output_folder = os.path.join(".","output","results_" + id)
         if os.path.isdir(output_folder):
             for root, dirs, files in os.walk(output_folder, topdown=False):
                 for f in files:
@@ -115,8 +115,8 @@ def delete_method():
                 for d in dirs:
                     os.rmdir(os.path.join(root, d))
             os.rmdir(output_folder)
-        subm_file = os.path.dirname(os.path.abspath(__file__)) + "/output/results_" + id + "." + gt_ext
-        results_file = os.path.dirname(os.path.abspath(__file__)) + "/output/subm_" + id + ".zip"
+        subm_file = os.path.join(".","output","results_" + id + "." + gt_ext)
+        results_file = os.path.join(".","output","subm_" + id + ".zip")
         os.remove(subm_file)
         os.remove(results_file)
     except:
@@ -128,7 +128,7 @@ def edit_method():
     id = request.forms.get('id')
     name = request.forms.get('name')
     
-    dbPath = os.path.dirname(os.path.abspath(__file__)) + "/output/submits"
+    dbPath = os.path.join(".","output","submits")
     conn = sqlite3.connect(dbPath)
     cursor = conn.cursor()
     cursor.execute('UPDATE submission SET title=? WHERE id=?',(name,id))
@@ -136,7 +136,7 @@ def edit_method():
     conn.close()    
     
 def get_all_submissions():
-    dbPath = os.path.dirname(os.path.abspath(__file__)) + "/output/submits"
+    dbPath = os.path.join(".","output","submits")
     conn = sqlite3.connect(dbPath)
     cursor = conn.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS submission(id integer primary key autoincrement, title varchar(50), sumbit_date varchar(12),results TEXT)""")
@@ -149,7 +149,7 @@ def get_all_submissions():
 
 
 def get_submission(id):
-    dbPath = os.path.dirname(os.path.abspath(__file__)) + "/output/submits"
+    dbPath = os.path.join(".","output","submits")
     conn = sqlite3.connect(dbPath)
     cursor = conn.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS submission(id integer primary key autoincrement, title varchar(50), sumbit_date varchar(12),results TEXT)""")
@@ -222,11 +222,11 @@ def sample():
     subms = get_all_submissions()
     for methodId,methodTitle,_,_ in subms:
         sampleResults = {"id":methodId, "title":methodTitle}
-        zipFolderPath = os.path.dirname(os.path.abspath(__file__)) + "/output/results_" + str(methodId)
+        zipFolderPath = os.path.join(".","output","results_" + str(methodId))
         sampleFilePath = zipFolderPath + "/" + sampleId
         exist = True
         if os.path.isfile(sampleFilePath) == False:
-            submFilePath = os.path.dirname(os.path.abspath(__file__)) + "/output/results_" + str(methodId) + ".zip"
+            submFilePath = os.path.join(".","output","results_" + str(methodId) + ".zip")
             archive = zipfile.ZipFile(submFilePath,'r')
         
             if os.path.exists(zipFolderPath) == False:
@@ -292,14 +292,14 @@ def evaluate():
                 return render_template('upload.html',vars=vars)    
     
         p = {
-            'g': os.path.dirname(os.path.abspath(__file__)) + "/gt/gt." + gt_ext, 
-            's': os.path.dirname(os.path.abspath(__file__)) + "/output/subm." + gt_ext, 
-            'o': os.path.dirname(os.path.abspath(__file__)) + "/output"
+            'g': os.path.join(".","gt","gt." + gt_ext), 
+            's': os.path.join(".","output","subm." + gt_ext), 
+            'o': os.path.join(".","output")
         }
         global PARAMS
-        setattr(PARAMS, 'GT_PATH', os.path.dirname(os.path.abspath(__file__)) + "/gt/gt." + gt_ext)
-        setattr(PARAMS, 'SUBMIT_PATH', os.path.dirname(os.path.abspath(__file__)) + "/output/subm." + gt_ext)
-        setattr(PARAMS, 'OUTPUT_PATH', os.path.dirname(os.path.abspath(__file__)) + "/output")
+        setattr(PARAMS, 'GT_PATH', os.path.join(".","gt","gt." + gt_ext))
+        setattr(PARAMS, 'SUBMIT_PATH', os.path.join(".","output","subm." + gt_ext))
+        setattr(PARAMS, 'OUTPUT_PATH', os.path.join(".","output"))
 
         # apply response to evaluation
         if 'transcription' in request.form.keys() and request.form['transcription'] == 'on':
@@ -325,11 +325,11 @@ def evaluate():
         submFile.save(p['s'])
 
         module = importlib.import_module(evaluation_script )
-        resDict = rrc_evaluation_funcs.main_evaluation(p,module.default_evaluation_params,module.validate_data,module.evaluate_method)
+        resDict = rrc_evaluation_funcs.main_evaluation(p,module.default_evaluation_params,module.validate_data,evaluate_method)
 
         
         if resDict['calculated']==True:
-            dbPath = os.path.dirname(os.path.abspath(__file__)) + "/output/submits"
+            dbPath = os.path.join(".","output","submits")
             conn = sqlite3.connect(dbPath)
             cursor = conn.cursor()
             
@@ -440,7 +440,7 @@ def send_js(path):
 def get_sample_info():
     methodId = request.args['m']    
     print(methodId)
-    submFilePath = os.path.dirname(os.path.abspath(__file__)) + "/output/results_" + methodId + ".zip"
+    submFilePath = os.path.join(".","output","results_" + str(methodId) + ".zip")
     archive = zipfile.ZipFile(submFilePath,'r')
     id = get_sample_id_from_num(int(request.args['sample']))
     results = json.loads(archive.read(id + ".json"))
@@ -459,7 +459,7 @@ def method():
     subm_data = {}
     if 'm' in request.args:
         id = request.args['m']
-        submFilePath = os.path.dirname(os.path.abspath(__file__)) + "/output/results_" + id   + ".zip"
+        submFilePath = os.path.join(".","output","results_" + id   + ".zip")
 
         if os.path.isfile(submFilePath):
             results = zipfile.ZipFile(submFilePath,'r')
@@ -518,7 +518,7 @@ if __name__=='__main__':
     app.jinja_env.globals.update(sorted_samplesData=sorted_samplesData)
     app.jinja_env.globals.update(custom_json_filter=custom_json_filter)
 
-    host = '192.168.28.25'
+    host = '127.0.0.1'
     port = 8081
     scheduler.init_app(app)
     scheduler.start()
