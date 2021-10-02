@@ -622,7 +622,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     ### Assign jobs
     TASKS = [(evalute, (resFile,gt,subm,evaluationParams)) for resFile in gt]
     with mp.Pool(processes=4) as pool:
-        for results in tqdm(pool.map(calculatestar,TASKS),total = 10):
+        for results in tqdm(pool.map(calculatestar,TASKS),total = len(gt)):
             methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,\
             perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile = results
 
@@ -633,6 +633,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             perSampleMetrics[resFile] = perSampleMetrics_resfile
             arrGlobalConfidences.append(arrGlobalConfidences_perfile)
             arrGlobalMatches.append(arrGlobalMatches_perfile)
+            pbar.update(1)
     # Compute MAP and MAR
     AP = 0
     if evaluationParams['CONFIDENCES']:
