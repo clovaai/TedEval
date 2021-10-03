@@ -286,7 +286,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         
         gtPols = []
         detPols = []
-        
+        gtTrans = []
+        detTrans = []        
         gtPolPoints = []
         detPolPoints = []  
         
@@ -343,6 +344,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 else:
                     gtCharPoints.append(gtBoxtoChars(gtCharSize, points))
                     gtPolPoints.append(points)
+            gtTrans.append(transcription)
         evaluationLog += "GT polygons: " + str(len(gtPols)) + (" (" + str(len(gtDontCarePolsNum)) + " don't care)\n" if len(gtDontCarePolsNum)>0 else "\n")
 
         # GT Don't Care overlap
@@ -355,10 +357,12 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             
             detFile = rrc_evaluation_funcs.decode_utf8(subm[resFile]) 
 
-            pointsList,confidencesList,_ = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(detFile,evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
+            pointsList,confidencesList,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(detFile,evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
+            print(transcriptionsList)
             for n in range(len(pointsList)):
                 points = pointsList[n]
-                
+                transcription = transcriptionsList[n]
+                detTrans.append(transcription)
                 if evaluationParams['DET_LTRB']:
                     detRect = Rectangle(*points)
                     detPol = rectangle_to_polygon(detRect)
@@ -549,6 +553,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                                             'charCounts': charCounts.tolist(),
                                             'recallScore': recallScore,
                                             'precisionScore': precisionScore,
+                                            'gtTrans':gtTrans,
+                                            'detTrans':detTrans,
                                             'gtDontCare':gtDontCarePolsNum,
                                             'detDontCare':detDontCarePolsNum,
                                             'evaluationParams': evaluationParams,
@@ -622,18 +628,19 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     ### Assign jobs
     TASKS = [(evalute, (resFile,gt,subm,evaluationParams)) for resFile in gt]
     with mp.Pool(processes=4) as pool:
-        for results in tqdm(pool.map(calculatestar,TASKS),total = len(gt)):
-            methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,\
-            perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile = results
+        with tqdm(total = len(gt)) as pbar:
+            for results in pool.map(calculatestar,TASKS):
+                methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,\
+                perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile = results
 
-            methodRecallSum += methodRecallSum_perfile
-            methodPrecisionSum += methodPrecisionSum_perfile
-            numGlobalCareGt += numGlobalCareGt_perfile
-            numGlobalCareDet += numGlobalCareDet_perfile
-            perSampleMetrics[resFile] = perSampleMetrics_resfile
-            arrGlobalConfidences.append(arrGlobalConfidences_perfile)
-            arrGlobalMatches.append(arrGlobalMatches_perfile)
-            pbar.update(1)
+                methodRecallSum += methodRecallSum_perfile
+                methodPrecisionSum += methodPrecisionSum_perfile
+                numGlobalCareGt += numGlobalCareGt_perfile
+                numGlobalCareDet += numGlobalCareDet_perfile
+                perSampleMetrics[resFile] = perSampleMetrics_resfile
+                arrGlobalConfidences.append(arrGlobalConfidences_perfile)
+                arrGlobalMatches.append(arrGlobalMatches_perfile)
+                pbar.update(1)
     # Compute MAP and MAR
     AP = 0
     if evaluationParams['CONFIDENCES']:
