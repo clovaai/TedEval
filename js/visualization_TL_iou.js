@@ -6,7 +6,7 @@ ClassVisualization.prototype.load_visualization = function(){
 
     var sampleData = this.sampleData;
 
-    var urlImg = "/scence_text_vis/image/?ch=" + getUrlParameter("ch") + "&task=" + getUrlParameter("task") + "&sample=" + getUrlParameter("sample") +  "&gtv=" + getUrlParameter("gtv");
+    var urlImg = "../image/?ch=" + getUrlParameter("ch") + "&task=" + getUrlParameter("task") + "&sample=" + getUrlParameter("sample") +  "&gtv=" + getUrlParameter("gtv");
 
     var template = "<div class='im_filters'><input type='checkbox' checked='checked' id='chk_image'><label for='chk_image'>Show Image</label></div>"+
                     "<div class='container_canvas'>" +
@@ -285,6 +285,8 @@ ClassVisualization.prototype.draw = function(){
     }else{
         this.ctx_gt.strokeStyle = "rgba(0,0,0,1)";
         this.ctx_gt.strokeRect(this.offset_x,this.offset_y,this.curr_im_w,this.curr_im_h);
+        this.ctx_gt.fillStyle = "black";
+        this.ctx_gt.fillRect(0, 0, this.canvas_gt.width, this.canvas_gt.height);
     }
 
 
@@ -384,7 +386,9 @@ ClassVisualization.prototype.draw = function(){
                     this.ctx_gt.stroke();
                 }
             }
-
+            if(!$("#chk_image").is(":checked")){
+                this.writeText(this.ctx_gt,bb,this.sampleData.gtTrans[i]);
+            }
         //}
     }
 
@@ -395,6 +399,8 @@ ClassVisualization.prototype.draw = function(){
     }else{
         this.ctx_det.strokeStyle = "rgba(0,0,0,1)";
         this.ctx_det.strokeRect(this.offset_x,this.offset_y,this.curr_im_w,this.curr_im_h);
+        this.ctx_det.fillStyle = "black";
+        this.ctx_det.fillRect(0, 0, this.canvas_det.width, this.canvas_det.height);
     }    
 
     for (var i=0;i<this.sampleData.detPolPoints.length;i++){
@@ -442,6 +448,9 @@ ClassVisualization.prototype.draw = function(){
                     this.ctx_det.strokeStyle = 'red';
                     this.ctx_det.stroke();
                 }   
+            }
+            if( !$("#chk_image").is(":checked")){
+                this.writeText(this.ctx_det,bb,this.sampleData.detTrans[i]);
             }
     }
     this.draws++;
