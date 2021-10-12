@@ -578,45 +578,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     arrGlobalConfidences = [];
     arrGlobalMatches = [];
     ### TODO : Optimize using concurrent
-    ####### initialize workers #######
-    # executor = concurrent.futures.ProcessPoolExecutor(max_workers=PARAMS.NUM_WORKERS)
-    # futures = []
-    # bar_len = len(gt)
-
-    ############ Old script ############ 
-    # for resFile in tqdm(gt):
-    #     # methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile=evalute(resFile,gt,subm,evaluationParams)
-        
-    #     # methodRecallSum += methodRecallSum_perfile
-    #     # methodPrecisionSum += methodPrecisionSum_perfile
-    #     # numGlobalCareGt += numGlobalCareGt_perfile
-    #     # numGlobalCareDet += numGlobalCareDet_perfile
-    #     # perSampleMetrics[resFile] = perSampleMetrics_resfile
-    #     # arrGlobalConfidences.append(arrGlobalConfidences_perfile)
-    #     # arrGlobalMatches.append(arrGlobalMatches_perfile)
-    #     future = executor.submit(evalute,resFile,gt,subm,evaluationParams)
-    #     futures.append(future)
-    # with tqdm(total=bar_len) as pbar:
-    #     pbar.set_description("Integrating results...")
-        
-    #     for future in concurrent.futures.as_completed(futures):
-    #         try:
-    #             result = future.result()
-    #             if result != None:
-    #                 methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile=result
-                    
-    #                 methodRecallSum += methodRecallSum_perfile
-    #                 methodPrecisionSum += methodPrecisionSum_perfile
-    #                 numGlobalCareGt += numGlobalCareGt_perfile
-    #                 numGlobalCareDet += numGlobalCareDet_perfile
-    #                 perSampleMetrics[resFile] = perSampleMetrics_resfile
-    #                 arrGlobalConfidences.append(arrGlobalConfidences_perfile)
-    #                 arrGlobalMatches.append(arrGlobalMatches_perfile)
-    #                 pbar.update(1)
-    #         except:
-    #             pass
-    # executor.shutdown()
-    #########################################
 
     ### Assign jobs
     TASKS = [(evalute, (resFile,gt,subm,evaluationParams)) for resFile in gt]
