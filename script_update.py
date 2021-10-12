@@ -261,12 +261,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     # global evalute
     def evalute(resFile,gt,subm,evaluationParams):
 
-        methodRecallSum = 0
-        methodPrecisionSum = 0
-        
-        numGlobalCareGt = 0
-        numGlobalCareDet = 0
-        
         arrGlobalConfidences = []
         arrGlobalMatches = []
         
@@ -530,10 +524,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         evaluationLog += "<b>Recall = " + str(round(recallAccum,2)) + " / " + str(numGtCare) + " = " + str(round(recall,2)) + "\n</b>"
         evaluationLog += "<b>Precision = " + str(round(precisionAccum,2)) + " / " + str(numDetCare) + " = "+ str(round(precision,2)) + "\n</b>"
         
-        methodRecallSum += recallAccum
-        methodPrecisionSum += precisionAccum
-        numGlobalCareGt += numGtCare
-        numGlobalCareDet += numDetCare
 
         if evaluationParams['PER_SAMPLE_RESULTS']:
              
@@ -561,7 +551,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                                             'evaluationLog': evaluationLog
                                         }
             
-        return methodRecallSum,methodPrecisionSum,numGlobalCareGt,numGlobalCareDet,perSampleMetrics_resfile,arrGlobalConfidences,arrGlobalMatches,resFile
+        return recallAccum,precisionAccum,numGtCare,numDetCare,perSampleMetrics_resfile,arrGlobalConfidences,arrGlobalMatches,resFile
 
 
     def calculatestar(args):
