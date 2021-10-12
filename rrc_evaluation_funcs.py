@@ -10,7 +10,7 @@ import codecs
 import importlib
 from io import StringIO
 from arg_parser import PARAMS
-
+import itertools
 
 COORS_4            = '^'+ ','.join(['\s*(-?[0-9]+)\s*']*4)
 POINT_TRANS_CONF_4 = COORS_4 + ',\s*([0-1].?[0-9]*)\s*,(.*)$'
@@ -82,7 +82,7 @@ def load_zip_file(file,fileNameRegExp='',allEntries=False):
             # else:
             #     if len(m.groups())>0:
             #         keyName = m.group(1)
-        keyName = name.replace('gt_', '').replace('res_', '').replace('.txt', '')
+        keyName = name.replace('gt_', '').replace('res_', '').replace('.txt', '').replace('.json', '')
         
         if addFile:
             pairs.append( [ keyName , archive.read(name)] )
@@ -340,6 +340,36 @@ def get_tl_line_values_from_file_contents(content,CRLF=True,LTRB=True,withTransc
         
     return pointsList,confidencesList,transcriptionsList
 
+def get_tl_line_values_from_dict(content,CRLF=True,withScript=False,withTranscription=False,withConfidence=False):
+    """
+    Returns all points, scripts and transcriptions of a file in lists. Valid line format:
+    x1,y1,x2,y2,x3,y3,x4,y4,[confidence],[script],[transcription]
+    """
+    pointsList = []
+    transcriptionsList = []
+    confidencesList = []
+    artList = []
+    
+    lines = json.loads(content)
+    for line in lines:
+        # points, confidence, script, transcription = get_tl_line_values(line,withScript,withTranscription,withConfidence);
+        points = line['points']
+        points = list(itertools.chain(*points)) ## Flatten a 2d list [[a,b],[c,d],[e,f],[g,h]]
+        if 'confidence' in line.keys():
+            confidence = line['confidence']
+            confidencesList.append(confidence)
+        else:
+            confidencesList.append(1)
+        if 'transcription' in line.keys():
+            transcription = line['transcription']
+            transcriptionsList.append(transcription)
+        if 'art' in line.keys():
+            art = line['art']
+            artList.append(art)
+        pointsList.append(points)
+
+    return pointsList,confidencesList,transcriptionsList,artList
+
 def main_evaluation(p,default_evaluation_params_fn,validate_data_fn,evaluate_method_fn,show_result=True,per_sample=True):
     """
     This process validates a method, evaluates it and if it succed generates a ZIP file with a JSON entry for each sample.
@@ -364,7 +394,7 @@ def main_evaluation(p,default_evaluation_params_fn,validate_data_fn,evaluate_met
         evalParams.update( p['p'] if isinstance(p['p'], dict) else json.loads(p['p'][1:-1]) )
 
     resDict={'calculated':True,'Message':'','method':'{}','per_sample':'{}'}    
-    validate_data_fn(p['g'], p['s'], evalParams)  
+    # validate_data_fn(p['g'], p['s'], evalParams)  
     evalData = evaluate_method_fn(p['g'], p['s'], evalParams)
     resDict.update(evalData)
 
