@@ -203,7 +203,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             return True
         return False
 
-    def one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints,gtExcludeMat,detExcludeMat):
+    def one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints,gtExcludeMat,detExcludeMat,detTrans):
         many_sum = 0
         detRects = []
         for detNum in range(len(recallMat[0])):
@@ -216,7 +216,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             for matchDet in detRects:
                 ############## Modify by Tran Thuyen 21/05/2021 ##############
                 # pD = polygon_from_points(detPolPoints[matchDet])
-                pD = MY_POLY(detPolPoints[matchDet]).make_polygon_obj()
+                pD = MY_POLY(detPolPoints[matchDet],detTrans[matchDet]).make_polygon_obj()
                 ##############################################################
                 pivots.append([get_midpoints(pD[0][0], pD[0][3]), pD.center()])
             for i in range(len(pivots)):
@@ -327,7 +327,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             else:
                 ############## Modify by Tran Thuyen 21/05/2021 ##############
                 # gtPol = polygon_from_points(points)
-                gtPol = MY_POLY(points).make_polygon_obj()
+                gtPol = MY_POLY(points,transcription).make_polygon_obj()
                 ##############################################################
             gtPols.append(gtPol)
             if dontCare:
@@ -371,7 +371,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                     ############## Modify by Tran Thuyen 21/05/2021 ##############
                     # detPol = polygon_from_points(points)
                     try:       
-                        detPol = MY_POLY(points).make_polygon_obj()
+                        detPol = MY_POLY(points,transcription).make_polygon_obj()
                     except ValueError:
                         print(points,"\t",resFile)
                         input()
@@ -461,7 +461,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 evaluationLog += "Find one-to-many matches\n"
                 for gtNum in range(len(gtPols)):
                     if gtNum not in gtDontCarePolsNum:
-                        match, matchesDet = one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints,gtExcludeMat,detExcludeMat)
+                        match, matchesDet = one_to_many_match(gtNum,recallMat,precisionMat,detDontCarePolsNum,detPolPoints,gtExcludeMat,detExcludeMat,detTrans)
                         if match:
                             pairs.append({'gt':[gtNum], 'det':matchesDet, 'type':'OM'})
                             evaluationLog += "Match Gt #" + str(gtNum) + " with Det #" + str(matchesDet) + "\n"
@@ -660,8 +660,10 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     return resDict;
 
 class MY_POLY():
-    def __init__(self,points):
+    def __init__(self,points,transcription,art=False):
         self.points = points
+        self.transcription = transcription
+        self.art = art
     def make_polygon_obj(self):
         
         point_x = self.points[0::2]
