@@ -285,6 +285,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         gtPolPoints = []
         detPolPoints = []  
         
+        gtArts = []
+
         # pseudo character centers
         gtCharPoints = []
         gtCharCounts = []
@@ -309,10 +311,12 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
         evaluationLog = ""
         # get_tl_line_values_from_file_contents(content,CRLF=True,LTRB=True,withTranscription=False,withConfidence=False,imWidth=0,imHeight=0,sort_by_confidences=True):
-        pointsList,_,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(gtFile, evaluationParams['GT_CRLF'], evaluationParams['GT_LTRB'], True, False)
+        # pointsList,_,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(gtFile, evaluationParams['GT_CRLF'], evaluationParams['GT_LTRB'], True, False)
+        pointsList,_,transcriptionsList,artList = rrc_evaluation_funcs.get_tl_line_values_from_dict(gtFile, evaluationParams['GT_CRLF'], evaluationParams['GT_LTRB'], True, False)
         for n in range(len(pointsList)):
             points = pointsList[n]
             transcription = transcriptionsList[n]
+            art = artList[n]
             dontCare = transcription == "###"
             if evaluationParams['GT_LTRB']:
                 gtRect = Rectangle(*points)
@@ -339,6 +343,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                     gtCharPoints.append(gtBoxtoChars(gtCharSize, points))
                     gtPolPoints.append(points)
             gtTrans.append(transcription)
+            gtArts.append(art)
         evaluationLog += "GT polygons: " + str(len(gtPols)) + (" (" + str(len(gtDontCarePolsNum)) + " don't care)\n" if len(gtDontCarePolsNum)>0 else "\n")
 
         # GT Don't Care overlap
@@ -542,6 +547,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                                             'precisionScore': precisionScore,
                                             'gtTrans':gtTrans,
                                             'detTrans':detTrans,
+                                            'art':gtArts,
                                             'gtDontCare':gtDontCarePolsNum,
                                             'detDontCare':detDontCarePolsNum,
                                             'evaluationParams': evaluationParams,
