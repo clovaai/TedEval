@@ -8,3 +8,14 @@ output/*
 *.swp
 .gd/
 gt/
+all_sub.zip
+all_sub/
+run_all.py
+save.zip
+submission.csv
+submits
+templates/index_.html
+gt_VietST_word_baker_txt/
+gt_VietST_word_baker_json/
+extract_annot.py
+test.py
