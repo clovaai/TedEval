@@ -352,7 +352,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             detFile = rrc_evaluation_funcs.decode_utf8(subm[resFile]) 
 
             pointsList,confidencesList,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(detFile,evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
-            print(transcriptionsList)
             for n in range(len(pointsList)):
                 points = pointsList[n]
                 transcription = transcriptionsList[n]
@@ -368,7 +367,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                         detPol = MY_POLY(points,transcription).make_polygon_obj()
                     except ValueError:
                         print(points,"\t",resFile)
-                        input()
                     ##############################################################
                 detPols.append(detPol)
                 detPolPoints.append(points)
@@ -383,7 +381,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 matchMat = np.zeros(outputShape)
                 gtRectMat = np.zeros(len(gtPols),np.int8)
                 detRectMat = np.zeros(len(detPols),np.int8)
-                global gtExcludeMat,detExcludeMat
                 gtExcludeMat = np.zeros(len(gtPols),np.int8)
                 detExcludeMat = np.zeros(len(detPols),np.int8)
                 for gtNum in range(len(gtPols)):
