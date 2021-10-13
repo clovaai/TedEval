@@ -17,7 +17,8 @@ def evaluation_imports():
     """    
     return {
             'Polygon':'plg',
-            'numpy':'np'
+            'numpy':'np',
+            'editdistance':'editdistance'
             }
 
 def default_evaluation_params():
@@ -28,6 +29,7 @@ def default_evaluation_params():
             'AREA_RECALL_CONSTRAINT' : 0.4,
             'AREA_PRECISION_CONSTRAINT' :0.4,
             'EV_PARAM_IND_CENTER_DIFF_THR': 1,
+            'IOU_CONSTRAINT' :0.5,
             'GT_SAMPLE_NAME_2_ID':'.*([0-9]+).*',
             'DET_SAMPLE_NAME_2_ID':'.*([0-9]+).*',
             'GT_LTRB': False, # LTRB: 2points(left,top,right,bottom) or 4 points(x1,y1,x2,y2,x3,y3,x4,y4)
@@ -178,7 +180,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
     def char_fill(detNums, matchMat,detPols,gtCharPoints,gtCharCounts):
         for detNum in detNums:
-            detPol = detPols[detNum]
+            detPol = detPols[detNum].polygon
             for gtNum, gtChars in enumerate(gtCharPoints):
                 if matchMat[gtNum, detNum] == 1:
                     for gtCharNum, gtChar in enumerate(gtChars):
@@ -243,7 +245,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         if many_sum >= evaluationParams['AREA_PRECISION_CONSTRAINT'] and len(gtRects) >= 2:
             pivots = []
             for matchGt in gtRects:
-                pG = gtPols[matchGt]
+                pG = gtPols[matchGt].polygon
                 pivots.append([get_midpoints(pG[0][0], pG[0][3]), pG.center()])
             for i in range(len(pivots)):
                 for k in range(len(pivots)):
@@ -258,6 +260,12 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         else:
             return False, []
 
+    def get_intersection_over_union(pD,pG):
+        try:
+            return get_intersection(pD, pG) / get_union(pD, pG);
+        except:
+            return 0
+
     # global evalute
     def evalute(resFile,gt,subm,evaluationParams):
 
@@ -270,6 +278,15 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         hmean = 0    
         recallAccum = 0.
         precisionAccum = 0.
+        detCorrect = 0
+        detCorrectUpper = 0
+        iouMat = np.empty([1,1])
+
+        recall_ART = 0
+        precision_ART = 0
+        hmean_ART = 0    
+        recallAccum_ART = 0.
+        precisionAccum_ART = 0.
 
         detMatched = 0
         numGtCare = 0
@@ -290,6 +307,9 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         # pseudo character centers
         gtCharPoints = []
         gtCharCounts = []
+
+        gtCharPoints_ART = []
+        gtCharCounts_ART = []
         
         # visualization
         charCounts = np.zeros([1,1])
@@ -298,9 +318,10 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
         #Array of Ground Truth Polygons' keys marked as don't Care
         gtDontCarePolsNum = []
+        gtDontCarePolsNum_ART = []
         #Array of Detected Polygons' matched with a don't Care GT
         detDontCarePolsNum = []
-        
+        detDontCarePolsNum_ART = []
         pairs = [] 
         detMatchedNums = []
         gtExcludeNums = []
@@ -308,6 +329,14 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         arrSampleConfidences = [];
         arrSampleMatch = [];
         sampleAP = 0;
+
+        ned=0;
+        nedSum = 0;
+        nedElements = 0;
+        
+        nedUpper=0;
+        nedSumUpper = 0;
+        nedElementsUpper = 0;
 
         evaluationLog = ""
         # get_tl_line_values_from_file_contents(content,CRLF=True,LTRB=True,withTranscription=False,withConfidence=False,imWidth=0,imHeight=0,sort_by_confidences=True):
@@ -325,16 +354,18 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             else:
                 ############## Modify by Tran Thuyen 21/05/2021 ##############
                 # gtPol = polygon_from_points(points)
-                gtPol = MY_POLY(points,transcription).make_polygon_obj()
+                gtPol = MY_POLY(points,transcription)
                 ##############################################################
             gtPols.append(gtPol)
             if dontCare:
                 gtDontCarePolsNum.append( len(gtPols)-1 )
+                if art:
+                    gtDontCarePolsNum_ART.append( len(gtPols)-1 )
                 gtPolPoints.append(points)
                 gtCharPoints.append([])
             else:
                 gtCharSize = len(transcription)
-                aspect_ratio = gtPol.aspectRatio()
+                aspect_ratio = gtPol.polygon.aspectRatio()
                 if aspect_ratio > 1.5:
                     points_ver =  [points[6], points[7], points[0], points[1], points[2], points[3], points[4], points[5]]
                     gtPolPoints.append(points_ver)
@@ -349,8 +380,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         # GT Don't Care overlap
         for DontCare in gtDontCarePolsNum:
             for gtNum in list(set(range(len(gtPols))) - set(gtDontCarePolsNum)):
-                if get_intersection(gtPols[gtNum], gtPols[DontCare]) > 0:
-                    gtPols[DontCare] -= gtPols[gtNum]
+                if get_intersection(gtPols[gtNum].polygon, gtPols[DontCare].polygon) > 0:
+                    gtPols[DontCare].polygon -= gtPols[gtNum].polygon
 
         if resFile in subm:
             
@@ -369,7 +400,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                     ############## Modify by Tran Thuyen 21/05/2021 ##############
                     # detPol = polygon_from_points(points)
                     try:       
-                        detPol = MY_POLY(points,transcription).make_polygon_obj()
+                        detPol = MY_POLY(points,transcription)
                     except ValueError:
                         print(points,"\t",resFile)
                     ##############################################################
@@ -381,6 +412,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             if len(gtPols)>0 and len(detPols)>0:
                 #Calculate IoU and precision matrixs
                 outputShape=[len(gtPols),len(detPols)]
+                iouMat = np.empty(outputShape)
                 recallMat = np.empty(outputShape)
                 precisionMat = np.empty(outputShape)
                 matchMat = np.zeros(outputShape)
@@ -391,13 +423,15 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 for gtNum in range(len(gtPols)):
                     detCharCounts = []
                     for detNum in range(len(detPols)):
-                        pG = gtPols[gtNum]
-                        pD = detPols[detNum]
+                        pG = gtPols[gtNum].polygon
+                        pD = detPols[detNum].polygon
                         intersected_area = get_intersection(pD,pG)
                         recallMat[gtNum,detNum] = 0 if pG.area()==0 else intersected_area / pG.area()
                         precisionMat[gtNum,detNum] = 0 if pD.area()==0 else intersected_area / pD.area()
                         detCharCounts.append(np.zeros(len(gtCharPoints[gtNum])))
                     gtCharCounts.append(detCharCounts)
+                    if gtPols[gtNum].art:
+                        gtCharCounts_ART.append(detCharCounts)
                     
                 # Find detection Don't Care
                 if len(gtDontCarePolsNum)>0 :
@@ -417,19 +451,61 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                         # many-to-one for mixed DC and non-DC
                         for gtNum in gtDontCarePolsNum:
                             if recallMat[gtNum, detNum] > 0:
-                                detPols[detNum] -= gtPols[gtNum]
+                                detPols[detNum].polygon -= gtPols[gtNum].polygon
                                     
                     evaluationLog += " (" + str(len(detDontCarePolsNum)) + " don't care)\n" if len(detDontCarePolsNum)>0 else "\n"
                 
                 # Recalculate matrices
                 for gtNum in range(len(gtPols)):
                     for detNum in range(len(detPols)):
-                        pG = gtPols[gtNum]
-                        pD = detPols[detNum]
+                        pG = gtPols[gtNum].polygon
+                        pD = detPols[detNum].polygon
                         intersected_area = get_intersection(pD,pG)
                         recallMat[gtNum,detNum] = 0 if pG.area()==0 else intersected_area / pG.area()
                         precisionMat[gtNum,detNum] = 0 if pD.area()==0 else intersected_area / pD.area()
-                        
+                        iouMat[gtNum,detNum] = get_intersection_over_union(pD,pG)
+                        ###### NED score by MLT_task_4_1_0.py added 14/10/2021 ######
+                        if gtRectMat[gtNum] == 0 and detRectMat[detNum] == 0 and gtNum not in gtDontCarePolsNum and detNum not in detDontCarePolsNum :
+                            if iouMat[gtNum,detNum]>evaluationParams['IOU_CONSTRAINT']:
+                                gtRectMat[gtNum] = 1
+                                detRectMat[detNum] = 1
+                                #detection matched only if transcription is equal (case insensitive)
+                                correct_ = gtTrans[gtNum] == detTrans[detNum]
+                                correctUpper = gtTrans[gtNum].upper() == detTrans[detNum].upper()
+                                
+                                detCorrect += (1 if correct_ else 0)
+                                detCorrectUpper += (1 if correctUpper else 0)
+                                if correctUpper:
+                                    detMatchedNums.append(detNum)
+                                pairs.append({'gt':[gtNum],'det':[detNum],'correct':correctUpper})
+                                evaluationLog += "Match GT #" + str(gtNum) + " with Det #" + str(detNum) + " trancription correct: " + str(correctUpper) + "\n"
+
+                                #Calculate also 1-NED
+                                distance = editdistance.eval(gtTrans[gtNum],detTrans[detNum])
+                                nedSum += 0 if len(gtTrans[gtNum])==0 and len(detTrans[detNum])==0 else float(distance) / max( len(gtTrans[gtNum]), len(detTrans[detNum]) )
+                                nedElements += 1
+                                distanceUpper = editdistance.eval(gtTrans[gtNum].upper(),detTrans[detNum].upper())
+                                nedSumUpper += 0 if len(gtTrans[gtNum])==0 and len(detTrans[detNum])==0 else float(distanceUpper) / max( len(gtTrans[gtNum]), len(detTrans[detNum]) )
+                                nedElementsUpper += 1
+
+                        ############################################################
+
+                ############ Optimize for loop ############
+                # for gtNum in range(len(gtPols)):
+                    if gtRectMat[gtNum] == 0 and gtNum not in gtDontCarePolsNum :
+                        nedSum += 1
+                        nedElements += 1
+                        nedSumUpper += 1
+                        nedElementsUpper += 1
+
+                
+                for detNum in range(len(detPols)):
+                    if detRectMat[detNum] == 0 and detNum not in detDontCarePolsNum :
+                        nedSum += 1
+                        nedElements += 1 
+                        nedSumUpper += 1
+                        nedElementsUpper += 1                            
+
                 # Find many-to-one matches
                 evaluationLog += "Find many-to-one matches\n"
                 for detNum in range(len(detPols)):
@@ -446,7 +522,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                         if gtNum not in gtDontCarePolsNum and detNum not in detDontCarePolsNum :
                             match = one_to_one_match(gtNum, detNum,recallMat,precisionMat)
                             if match:
-                                normDist = center_distance(gtPols[gtNum], detPols[detNum]);
+                                normDist = center_distance(gtPols[gtNum].polygon, detPols[detNum].polygon);
                                 normDist /= diag(gtPolPoints[gtNum]) + diag(detPolPoints[detNum]);
                                 normDist *= 2.0;
                                 if normDist < evaluationParams['EV_PARAM_IND_CENTER_DIFF_THR'] :
@@ -515,11 +591,27 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             recall = float(1)
             precision = float(0) if numDetCare >0 else float(1)
             sampleAP = precision
+            ned = float(0) if numDetCare >0 else float(1)
+            nedUpper = float(0) if numDetCare >0 else float(1)
+            nedSum = numDetCare
+            nedSumUpper = numDetCare
+            nedElements = numDetCare
+            nedElementsUpper = numDetCare
         else:
             recall = float(recallAccum) / numGtCare
             precision = float(0) if numDetCare==0 else float(precisionAccum) / numDetCare
             if evaluationParams['CONFIDENCES'] and evaluationParams['PER_SAMPLE_RESULTS']:
                 sampleAP = compute_ap(arrSampleConfidences, arrSampleMatch, numGtCare )                    
+            if(numDetCare==0):
+                nedSum = numGtCare
+                nedSumUpper = numGtCare
+                nedElements = numGtCare
+                nedElementsUpper = numGtCare
+                ned =  0
+                nedUpper =  0
+            else:
+                ned =  0 if nedElements==0 else 1 - float(nedSum)/nedElements;                   
+                nedUpper =  0 if nedElementsUpper==0 else 1 - float(nedSumUpper)/nedElementsUpper;                   
 
         hmean = 0 if (precision + recall)==0 else 2.0 * precision * recall / (precision + recall)                
 
@@ -536,6 +628,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                                             'hmean':hmean,
                                             'pairs':pairs,
                                             'AP':sampleAP,
+                                            'ned':ned,
+                                            'nedUpper':nedUpper,
                                             'recallMat':[] if len(detPols)>100 else recallMat.tolist(),
                                             'precisionMat':[] if len(detPols)>100 else precisionMat.tolist(),
                                             'gtPolPoints':gtPolPoints,
@@ -554,7 +648,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                                             'evaluationLog': evaluationLog
                                         }
             
-        return recallAccum,precisionAccum,numGtCare,numDetCare,perSampleMetrics_resfile,arrGlobalConfidences,arrGlobalMatches,resFile
+        return recallAccum,precisionAccum,numGtCare,numDetCare,perSampleMetrics_resfile,arrGlobalConfidences,arrGlobalMatches,resFile,\
+                detCorrect,detCorrectUpper,numGtCare,numDetCare,nedSum,nedElements,nedSumUpper,nedElementsUpper
 
 
     def calculatestar(args):
@@ -575,6 +670,13 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     numGlobalCareGt = 0;
     numGlobalCareDet = 0;
     
+    matchedSum = 0
+    matchedSumUpper = 0
+    globalNedSum = 0
+    globalNedElements = 0
+    globalNedSumUpper = 0
+    globalNedElementsUpper = 0    
+
     arrGlobalConfidences = [];
     arrGlobalMatches = [];
     ### TODO : Optimize using concurrent
@@ -585,8 +687,11 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         with tqdm(total = len(gt)) as pbar:
             for results in pool.map(calculatestar,TASKS):
                 methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,\
-                perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile = results
-
+                perSampleMetrics_resfile,arrGlobalConfidences_perfile,arrGlobalMatches_perfile,resFile,\
+                detCorrect_perfile,detCorrectUpper_perfile,numGtCare_perfile,numDetCare_perfile, \
+                nedSum_perfile,nedElements_perfile,nedSumUpper_perfile,nedElementsUpper_perfile= results
+                
+                ### Regular tedeval return
                 methodRecallSum += methodRecallSum_perfile
                 methodPrecisionSum += methodPrecisionSum_perfile
                 numGlobalCareGt += numGlobalCareGt_perfile
@@ -594,6 +699,12 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 perSampleMetrics[resFile] = perSampleMetrics_resfile
                 arrGlobalConfidences.append(arrGlobalConfidences_perfile)
                 arrGlobalMatches.append(arrGlobalMatches_perfile)
+
+                ### NED return
+                globalNedSum += nedSum_perfile
+                globalNedElements += nedElements_perfile
+                globalNedSumUpper += nedSumUpper_perfile
+                globalNedElementsUpper += nedElementsUpper_perfile
                 pbar.update(1)
     # Compute MAP and MAR
     AP = 0
@@ -603,8 +714,11 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
     methodRecall = 0 if numGlobalCareGt == 0 else methodRecallSum/numGlobalCareGt
     methodPrecision = 0 if numGlobalCareDet == 0 else methodPrecisionSum/numGlobalCareDet
     methodHmean = 0 if methodRecall + methodPrecision==0 else 2* methodRecall * methodPrecision / (methodRecall + methodPrecision)
+
+    methodNed = 0 if globalNedElements==0 else 1 - float(globalNedSum)/globalNedElements;
+    methodNedUpper = 0 if globalNedElementsUpper==0 else 1 - float(globalNedSumUpper)/globalNedElementsUpper;
     
-    methodMetrics = {'recall':methodRecall, 'precision':methodPrecision, 'hmean':methodHmean, 'AP':AP  }
+    methodMetrics = {'recall':methodRecall, 'precision':methodPrecision, 'hmean':methodHmean, 'AP':AP, 'ned':methodNed, 'nedUpped':methodNedUpper  }
     
     resDict = {'calculated':True,'Message':'','method': methodMetrics,'per_sample': perSampleMetrics}
     # import json
@@ -618,6 +732,7 @@ class MY_POLY():
         self.points = points
         self.transcription = transcription
         self.art = art
+        self.polygon = self.make_polygon_obj()
     def make_polygon_obj(self):
         
         point_x = self.points[0::2]
