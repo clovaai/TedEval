@@ -344,18 +344,16 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             else:
                 ############## Modify by Tran Thuyen 21/05/2021 ##############
                 # gtPol = polygon_from_points(points)
-                gtPol = MY_POLY(points,transcription)
+                gtPol = MY_POLY(points,transcription).make_polygon_obj()
                 ##############################################################
             gtPols.append(gtPol)
             if dontCare:
                 gtDontCarePolsNum.append( len(gtPols)-1 )
-                if art:
-                    gtDontCarePolsNum_ART.append( len(gtPols)-1 )
                 gtPolPoints.append(points)
                 gtCharPoints.append([])
             else:
                 gtCharSize = len(transcription)
-                aspect_ratio = gtPol.polygon.aspectRatio()
+                aspect_ratio = gtPol.aspectRatio()
                 if aspect_ratio > 1.5:
                     points_ver =  [points[6], points[7], points[0], points[1], points[2], points[3], points[4], points[5]]
                     gtPolPoints.append(points_ver)
@@ -370,8 +368,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         # GT Don't Care overlap
         for DontCare in gtDontCarePolsNum:
             for gtNum in list(set(range(len(gtPols))) - set(gtDontCarePolsNum)):
-                if get_intersection(gtPols[gtNum].polygon, gtPols[DontCare].polygon) > 0:
-                    gtPols[DontCare].polygon -= gtPols[gtNum].polygon
+                if get_intersection(gtPols[gtNum], gtPols[DontCare]) > 0:
+                    gtPols[DontCare] -= gtPols[gtNum]
 
         if resFile in subm:
             
@@ -390,7 +388,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                     ############## Modify by Tran Thuyen 21/05/2021 ##############
                     # detPol = polygon_from_points(points)
                     try:       
-                        detPol = MY_POLY(points,transcription)
+                        detPol = MY_POLY(points,transcription).make_polygon_obj()
                     except ValueError:
                         print(points,"\t",resFile)
                     ##############################################################
@@ -413,8 +411,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 for gtNum in range(len(gtPols)):
                     detCharCounts = []
                     for detNum in range(len(detPols)):
-                        pG = gtPols[gtNum].polygon
-                        pD = detPols[detNum].polygon
+                        pG = gtPols[gtNum]
+                        pD = detPols[detNum]
                         intersected_area = get_intersection(pD,pG)
                         recallMat[gtNum,detNum] = 0 if pG.area()==0 else intersected_area / pG.area()
                         precisionMat[gtNum,detNum] = 0 if pD.area()==0 else intersected_area / pD.area()
@@ -439,15 +437,15 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                         # many-to-one for mixed DC and non-DC
                         for gtNum in gtDontCarePolsNum:
                             if recallMat[gtNum, detNum] > 0:
-                                detPols[detNum].polygon -= gtPols[gtNum].polygon
+                                detPols[detNum] -= gtPols[gtNum]
                                     
                     evaluationLog += " (" + str(len(detDontCarePolsNum)) + " don't care)\n" if len(detDontCarePolsNum)>0 else "\n"
                 
                 # Recalculate matrices
                 for gtNum in range(len(gtPols)):
                     for detNum in range(len(detPols)):
-                        pG = gtPols[gtNum].polygon
-                        pD = detPols[detNum].polygon
+                        pG = gtPols[gtNum]
+                        pD = detPols[detNum]
                         intersected_area = get_intersection(pD,pG)
                         recallMat[gtNum,detNum] = 0 if pG.area()==0 else intersected_area / pG.area()
                         precisionMat[gtNum,detNum] = 0 if pD.area()==0 else intersected_area / pD.area()
@@ -510,7 +508,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                         if gtNum not in gtDontCarePolsNum and detNum not in detDontCarePolsNum :
                             match = one_to_one_match(gtNum, detNum,recallMat,precisionMat)
                             if match:
-                                normDist = center_distance(gtPols[gtNum].polygon, detPols[detNum].polygon);
+                                normDist = center_distance(gtPols[gtNum], detPols[detNum]);
                                 normDist /= diag(gtPolPoints[gtNum]) + diag(detPolPoints[detNum]);
                                 normDist *= 2.0;
                                 if normDist < evaluationParams['EV_PARAM_IND_CENTER_DIFF_THR'] :
@@ -720,7 +718,6 @@ class MY_POLY():
         self.points = points
         self.transcription = transcription
         self.art = art
-        self.polygon = self.make_polygon_obj()
     def make_polygon_obj(self):
         
         point_x = self.points[0::2]
