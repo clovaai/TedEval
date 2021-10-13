@@ -19,3 +19,5 @@ gt_VietST_word_baker_txt/
 gt_VietST_word_baker_json/
 extract_annot.py
 test.py
+gt_VietST_word_baker_txt_with_script
+gt_VietST_word_baker_txt_with_script_v2

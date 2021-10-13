@@ -228,40 +228,51 @@ def get_tl_line_values(line,LTRB=True,withTranscription=False,withConfidence=Fal
         box_type = POLY
         # TODO: TotalText GT보고 정하기
         # TODO: 이렇게 리턴하는 건 굉장히 위험
-        splitted_line = line.split(',')
-        tmp_transcription = list()
+        # splitted_line = line.split(',')
+        # tmp_transcription = list()
 
-        if withTranscription:
-            tmp_transcription.append(splitted_line.pop())
-            while not len("".join(tmp_transcription)):
-                tmp_transcription.append(splitted_line.pop())
+        # if withTranscription:
+        #     tmp_transcription.append(splitted_line.pop())
+        #     while not len("".join(tmp_transcription)):
+        #         tmp_transcription.append(splitted_line.pop())
 
-        if withConfidence:
-            if len(splitted_line) % 2 != 0:
-                confidence = float(splitted_line.pop())
-                points = [float(x) for x in splitted_line]
-            else:
-                backward_idx = len(splitted_line)-1
-                while backward_idx > 0:
-                    if splitted_line[backward_idx].isdigit() and len(splitted_line) % 2 != 0:
-                        break
-                    tmp_transcription.append(splitted_line.pop())
-                    backward_idx -= 1
-                confidence = float(splitted_line.pop())
-                points = [float(x) for x in splitted_line]
-        else:
-            if len(splitted_line) % 2 == 0:
-                points = [float(x) for x in splitted_line]
-            else:
-                backward_idx = len(splitted_line) - 1
-                while backward_idx > 0:
-                    if splitted_line[backward_idx].isdigit():
-                        break
-                    tmp_transcription.append(splitted_line.pop())
-                    backward_idx -= 1
-                points = [float(x) for x in splitted_line]
-
-        transcription = ",".join(tmp_transcription)
+        # if withConfidence:
+        #     if len(splitted_line) % 2 != 0:
+        #         confidence = float(splitted_line.pop())
+        #         points = [float(x) for x in splitted_line]
+        #     else:
+        #         backward_idx = len(splitted_line)-1
+        #         while backward_idx > 0:
+        #             if splitted_line[backward_idx].isdigit() and len(splitted_line) % 2 != 0:
+        #                 break
+        #             tmp_transcription.append(splitted_line.pop())
+        #             backward_idx -= 1
+        #         confidence = float(splitted_line.pop())
+        #         points = [float(x) for x in splitted_line]
+        # else:
+        #     if len(splitted_line) % 2 == 0:
+        #         points = [float(x) for x in splitted_line]
+        #     else:
+        #         backward_idx = len(splitted_line) - 1
+        #         while backward_idx > 0:
+        #             if splitted_line[backward_idx].isdigit():
+        #                 break
+        #             tmp_transcription.append(splitted_line.pop())
+        #             backward_idx -= 1
+        #         points = [float(x) for x in splitted_line]
+        splitted_line = line.split('###')
+        points = splitted_line[0]
+        if points[-1] == ',':
+            points = points[:-1]
+        points = [float(x) for x in points.split(",")]
+        if len(splitted_line) >= 2:
+            transcription = splitted_line[1]
+            
+            confidence = 0
+            if len(splitted_line) == 3 and splitted_line[2] != '':
+                confidence = float(splitted_line[2])
+        # transcription = ",".join(tmp_transcription)
+        # print("points:\t",points," len(points):",len(points),"\nconfidence:",confidence,"\ntranscription:\t",transcription)
         return points,confidence,transcription
         # return POLY(points, confidence=confidence, transcription=transcription)
     
