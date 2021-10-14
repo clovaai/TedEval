@@ -35,9 +35,15 @@ customJS = 'visualization_TL_iou.js'
 #Custom CSS for the visualiztion.
 customCSS = 'visualization_TL_iou.css'
 #Parameters used to show the results of a method and the method's ranking
-method_params = json.loads("""{"recall":{"long_name":"Recall","type":"double","order":"","grafic":"1","format":"perc"},"precision":{"long_name":"Precision","type":"double","order":"","grafic":"1","format":"perc"},"hmean":{"long_name":"Hmean","type":"double","order":"desc","grafic":"1","format":"perc"}}""")
+method_params = json.loads("""{"recall":{"long_name":"Recall","type":"double","order":"","grafic":"1","format":"perc"},
+                           "precision":{"long_name":"Precision","type":"double","order":"","grafic":"1","format":"perc"},
+                           "hmean":{"long_name":"Hmean","type":"double","order":"desc","grafic":"1","format":"perc"},
+                           "ned":{"long_name":"NED","type":"","order":"","grafic":"1","format":""}}""")
 #Parameters to show for each sample
-sample_params = json.loads("""{"recall":{"long_name":"Recall","type":"double","order":"","grafic":"","format":"perc"},"precision":{"long_name":"Precision","type":"double","order":"","grafic":"","format":"perc"},"hmean":{"long_name":"Hmean","type":"double","order":"desc","grafic":"","format":"perc"}}""")
+sample_params = json.loads("""{"recall":{"long_name":"Recall","type":"double","order":"","grafic":"","format":"perc"},
+                           "precision":{"long_name":"Precision","type":"double","order":"","grafic":"","format":"perc"},
+                           "hmean":{"long_name":"Hmean","type":"double","order":"desc","grafic":"","format":"perc"},
+                           "ned":{"long_name":"NED","type":"","order":"","grafic":"","format":""}}""")
 #Parameters to ask for for each submition
 submit_params = json.loads("""{}""")
 #Regular expression to get the Sample ID from the image name. ID must be the first capturing group.
