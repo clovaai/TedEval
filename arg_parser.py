@@ -12,6 +12,7 @@ parser.add_argument('-s', '--SUBMIT_PATH', default='submit.zip', help="Path of y
 # webserver parameters
 parser.add_argument('-o', '--OUTPUT_PATH', default='output/', help="Path to a directory where to copy the file that contains per-sample results.")
 parser.add_argument('-p', '--PORT', default=8080, help='port number to show')
+parser.add_argument('--HOST', default='0.0.0.0', help='port number to show')
 
 # result format related parameters
 parser.add_argument('--BOX_TYPE', default='QUAD', choices=['LTRB', 'QUAD', 'POLY'])

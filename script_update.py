@@ -669,7 +669,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
     ### Assign jobs
     TASKS = [(evalute, (resFile,gt,subm,evaluationParams)) for resFile in gt]
-    with mp.Pool(processes=4) as pool:
+    with mp.Pool(processes=PARAMS.NUM_WORKERS) as pool:
         with tqdm(total = len(gt)) as pbar:
             for results in pool.map(calculatestar,TASKS):
                 methodRecallSum_perfile,methodPrecisionSum_perfile,numGlobalCareGt_perfile,numGlobalCareDet_perfile,\
