@@ -10,6 +10,8 @@ output/*
 gt/
 all_sub.zip
 all_sub/
+all_sub_2/
+.gitignore
 run_all.py
 save.zip
 submission.csv
