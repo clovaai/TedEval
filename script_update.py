@@ -318,8 +318,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         detDontCarePolsNum = []
         
 
-        gtDontCarePolsNum_ = [] #Array of Ground Truth Polygons' keys marked as don't Care
-        detDontCarePolsNum_ = [] #Array of Detected Polygons' matched with a don't Care GT
+        gtDontCarePolsNum_NED = [] #Array of Ground Truth Polygons' keys marked as don't Care
+        detDontCarePolsNum_NED = [] #Array of Detected Polygons' matched with a don't Care GT
 
         pairs = [] 
         detMatchedNums = []
@@ -358,7 +358,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             gtPols.append(gtPol)
             if dontCare:
                 gtDontCarePolsNum.append( len(gtPols)-1 )
-                gtDontCarePolsNum_.append( len(gtPols)-1 )
+                gtDontCarePolsNum_NED.append( len(gtPols)-1 )
                 gtPolPoints.append(points)
                 gtCharPoints.append([])
             else:
@@ -385,8 +385,8 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             
             detFile = rrc_evaluation_funcs.decode_utf8(subm[resFile]) 
 
-            pointsList,_,transcriptionsList,artList = rrc_evaluation_funcs.get_tl_line_values_from_dict(detFile,evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
-            # pointsList,confidencesList,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(detFile,evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
+            # pointsList,_,transcriptionsList,artList = rrc_evaluation_funcs.get_tl_line_values_from_dict(detFile,evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
+            pointsList,confidencesList,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(detFile,evaluationParams['DET_CRLF'],evaluationParams['DET_LTRB'],evaluationParams['TRANSCRIPTION'],evaluationParams['CONFIDENCES'])
             for n in range(len(pointsList)):
                 points = pointsList[n]
                 transcription = transcriptionsList[n]
@@ -407,7 +407,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                 detPolPoints.append(points)
                 
             evaluationLog += "DET polygons: " + str(len(detPols))
-            print(detTrans)
+
             if len(gtPols)>0 and len(detPols)>0:
                 #Calculate IoU and precision matrixs
                 outputShape=[len(gtPols),len(detPols)]
@@ -449,13 +449,13 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                         for gtNum in gtDontCarePolsNum:
                             if recallMat[gtNum, detNum] > 0:
                                 detPols[detNum] -= gtPols[gtNum]
-                    for dontCarePol in gtDontCarePolsNum_:
+                    for dontCarePol in gtDontCarePolsNum_NED:
                         dontCarePol = gtPols[dontCarePol]
                         intersected_area = get_intersection(dontCarePol,detPol)
                         pdDimensions = detPol.area()
                         precision = 0 if pdDimensions == 0 else intersected_area / pdDimensions
                         if (precision > evaluationParams['AREA_PRECISION_CONSTRAINT'] ):
-                            detDontCarePolsNum_.append( len(detPols)-1 )
+                            detDontCarePolsNum_NED.append( len(detPols)-1 )
                             break                                    
                     evaluationLog += " (" + str(len(detDontCarePolsNum)) + " don't care)\n" if len(detDontCarePolsNum)>0 else "\n"
                 
@@ -469,7 +469,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                         precisionMat[gtNum,detNum] = 0 if pD.area()==0 else intersected_area / pD.area()
                         iouMat[gtNum,detNum] = get_intersection_over_union(pD,pG)
                         ###### NED score by MLT_task_4_1_0.py added 14/10/2021 ######
-                        if gtRectMat[gtNum] == 0 and detRectMat[detNum] == 0 and gtNum not in gtDontCarePolsNum_ and detNum not in detDontCarePolsNum_ :
+                        if gtRectMat[gtNum] == 0 and detRectMat[detNum] == 0 and gtNum not in gtDontCarePolsNum_NED and detNum not in detDontCarePolsNum_NED :
                             if iouMat[gtNum,detNum]>evaluationParams['IOU_CONSTRAINT']:
                                 gtRectMat[gtNum] = 1
                                 detRectMat[detNum] = 1
@@ -487,13 +487,6 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                                 #Calculate also 1-NED
                                 distance = editdistance.eval(gtTrans[gtNum],detTrans[detNum])
                                 nedSum += 0 if len(gtTrans[gtNum])==0 and len(detTrans[detNum])==0 else float(distance) / max( len(gtTrans[gtNum]), len(detTrans[detNum]) )
-                                # if not (len(gtTrans[gtNum])==0 and len(detTrans[detNum])==0):
-                                #     print("Here")
-                                #     print(float(distance))
-                                #     print(gtTrans[gtNum])
-                                #     print(detTrans[detNum])
-                                #     print(nedSum)
-                                #     exit()
                                 nedElements += 1
                                 distanceUpper = editdistance.eval(gtTrans[gtNum].upper(),detTrans[detNum].upper())
                                 nedSumUpper += 0 if len(gtTrans[gtNum])==0 and len(detTrans[detNum])==0 else float(distanceUpper) / max( len(gtTrans[gtNum]), len(detTrans[detNum]) )
@@ -503,7 +496,7 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
                 ############ Optimize for loop ############
                 for gtNum in range(len(gtPols)):
-                    if gtRectMat[gtNum] == 0 and gtNum not in gtDontCarePolsNum_ :
+                    if gtRectMat[gtNum] == 0 and gtNum not in gtDontCarePolsNum_NED :
                         nedSum += 1
                         nedElements += 1
                         nedSumUpper += 1
@@ -511,12 +504,12 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
                 
                 for detNum in range(len(detPols)):
-                    if detRectMat[detNum] == 0 and detNum not in detDontCarePolsNum_ :
+                    if detRectMat[detNum] == 0 and detNum not in detDontCarePolsNum_NED :
                         nedSum += 1
                         nedElements += 1 
                         nedSumUpper += 1
                         nedElementsUpper += 1                            
-                # print(iouMat)
+
                 # Find many-to-one matches
                 evaluationLog += "Find many-to-one matches\n"
                 for detNum in range(len(detPols)):
@@ -599,10 +592,9 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         numGtCare = (len(gtPols) - len(gtDontCarePolsNum))
         numDetCare = (len(detPols) - len(detDontCarePolsNum))
 
-        numGtCare_ = (len(gtPols) - len(gtDontCarePolsNum_))
-        numDetCare_ = (len(detPols) - len(detDontCarePolsNum_))
+        numGtCare_NED = (len(gtPols) - len(gtDontCarePolsNum_NED))
+        numDetCare_NED = (len(detPols) - len(detDontCarePolsNum_NED))
 
-        print(numGtCare_,numDetCare_,nedSum,nedElements)
         if numGtCare == 0:
             recall = float(1)
             precision = float(0) if numDetCare >0 else float(1)
@@ -613,23 +605,22 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             if evaluationParams['CONFIDENCES'] and evaluationParams['PER_SAMPLE_RESULTS']:
                 sampleAP = compute_ap(arrSampleConfidences, arrSampleMatch, numGtCare )                    
 
-        if numGtCare_ == 0:
-            ned = float(0) if numDetCare_ >0 else float(1)
-            nedUpper = float(0) if numDetCare_ >0 else float(1)
-            nedSum = numDetCare_
-            nedSumUpper = numDetCare_
-            nedElements = numDetCare_
-            nedElementsUpper = numDetCare_
+        if numGtCare_NED == 0:
+            ned = float(0) if numDetCare_NED >0 else float(1)
+            nedUpper = float(0) if numDetCare_NED >0 else float(1)
+            nedSum = numDetCare_NED
+            nedSumUpper = numDetCare_NED
+            nedElements = numDetCare_NED
+            nedElementsUpper = numDetCare_NED
         else:
-            if(numDetCare_==0):
-                nedSum = numGtCare_
-                nedSumUpper = numGtCare_
-                nedElements = numGtCare_
-                nedElementsUpper = numGtCare_
+            if(numDetCare_NED==0):
+                nedSum = numGtCare_NED
+                nedSumUpper = numGtCare_NED
+                nedElements = numGtCare_NED
+                nedElementsUpper = numGtCare_NED
                 ned =  0
                 nedUpper =  0
             else:
-                print("Here")
                 ned =  0 if nedElements==0 else 1 - float(nedSum)/nedElements;                   
                 nedUpper =  0 if nedElementsUpper==0 else 1 - float(nedSumUpper)/nedElementsUpper;
         hmean = 0 if (precision + recall)==0 else 2.0 * precision * recall / (precision + recall)                
