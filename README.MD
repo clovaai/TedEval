@@ -116,8 +116,8 @@ The ground truth and the result data should be text files, one for each sample. 
 Compress these text files without the parent directory.
 
 ```python3
-zip gt.zip gt/*
-zip result.zip result/*
+zip -r -j gt.zip gt/*
+zip -r -j result.zip result/*
 ```
 
 Refer to `gt/result.zip` and `gt/gt_*.zip` for examples.
