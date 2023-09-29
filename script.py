@@ -176,22 +176,29 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
                             gtCharCounts[gtNum][detNum][gtCharNum] = 1
 
     def one_to_one_match(row, col):
+        valid = recallMat[row,col] >= evaluationParams['AREA_RECALL_CONSTRAINT'] and precisionMat[row,col] >= evaluationParams['AREA_PRECISION_CONSTRAINT']
+        if not valid:
+            return False
+
         cont = 0
         for j in range(len(recallMat[0])):    
             if recallMat[row,j] >= evaluationParams['AREA_RECALL_CONSTRAINT'] and precisionMat[row,j] >= evaluationParams['AREA_PRECISION_CONSTRAINT'] :
                 cont = cont +1
+                if cont > 1:
+                    return False
+
         if (cont != 1):
             return False
         cont = 0
         for i in range(len(recallMat)):    
             if recallMat[i,col] >= evaluationParams['AREA_RECALL_CONSTRAINT'] and precisionMat[i,col] >= evaluationParams['AREA_PRECISION_CONSTRAINT'] :
                 cont = cont +1
+                if cont > 1:
+                    return False
         if (cont != 1):
             return False
         
-        if recallMat[row,col] >= evaluationParams['AREA_RECALL_CONSTRAINT'] and precisionMat[row,col] >= evaluationParams['AREA_PRECISION_CONSTRAINT'] :
-            return True
-        return False
+        return True
 
     def one_to_many_match(gtNum):
         many_sum = 0
